@@ -1,0 +1,109 @@
+{
+  "version": "0.1",
+  "fields": [
+    {
+      "path": "invoice.id",
+      "type": "string",
+      "required": true
+    },
+    {
+      "path": "invoice.issue_date",
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "required": true
+    },
+    {
+      "path": "invoice.currency",
+      "type": "enum",
+      "enum": [
+        "AED",
+        "SAR",
+        "MYR",
+        "USD"
+      ],
+      "required": true
+    },
+    {
+      "path": "invoice.total_excl_vat",
+      "type": "number",
+      "required": true
+    },
+    {
+      "path": "invoice.vat_amount",
+      "type": "number",
+      "required": true
+    },
+    {
+      "path": "invoice.total_incl_vat",
+      "type": "number",
+      "required": true
+    },
+    {
+      "path": "seller.name",
+      "type": "string",
+      "required": true
+    },
+    {
+      "path": "seller.trn",
+      "type": "string",
+      "required": true
+    },
+    {
+      "path": "seller.country",
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "required": true
+    },
+    {
+      "path": "seller.city",
+      "type": "string",
+      "required": false
+    },
+    {
+      "path": "buyer.name",
+      "type": "string",
+      "required": true
+    },
+    {
+      "path": "buyer.trn",
+      "type": "string",
+      "required": true
+    },
+    {
+      "path": "buyer.country",
+      "type": "string",
+      "pattern": "^[A-Z]{2}$",
+      "required": true
+    },
+    {
+      "path": "buyer.city",
+      "type": "string",
+      "required": false
+    },
+    {
+      "path": "lines[].sku",
+      "type": "string",
+      "required": true
+    },
+    {
+      "path": "lines[].description",
+      "type": "string",
+      "required": false
+    },
+    {
+      "path": "lines[].qty",
+      "type": "number",
+      "required": true
+    },
+    {
+      "path": "lines[].unit_price",
+      "type": "number",
+      "required": true
+    },
+    {
+      "path": "lines[].line_total",
+      "type": "number",
+      "required": true
+    }
+  ]
+}

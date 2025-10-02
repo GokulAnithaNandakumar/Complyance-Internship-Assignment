@@ -1,0 +1,59 @@
+[
+  {
+    "inv_id": "INV-1001",
+    "date": "2025-01-15",
+    "currency": "AED",
+    "seller_name": "Alpha LLC",
+    "seller_trn": "100200300",
+    "seller_country": "AE",
+    "seller_city": "Dubai",
+    "buyer_name": "Beta FZ-LLC",
+    "buyer_trn": "700800900",
+    "buyer_country": "AE",
+    "buyer_city": "Abu Dhabi",
+    "total_excl_vat": 1000,
+    "vat_amount": 50,
+    "total_incl_vat": 1050,
+    "lines": [
+      {
+        "sku": "A1",
+        "description": "Widget A",
+        "qty": 5,
+        "unit_price": 100,
+        "line_total": 500
+      },
+      {
+        "sku": "B2",
+        "description": "Widget B",
+        "qty": 5,
+        "unit_price": 100,
+        "line_total": 500
+      }
+    ]
+  },
+  {
+    "inv_id": "INV-1002",
+    "date": "2025-01-16",
+    "currency": "SAR",
+    "seller_name": "Gamma Co",
+    "seller_trn": "111222333",
+    "seller_country": "SA",
+    "seller_city": "Riyadh",
+    "buyer_name": "Delta Co",
+    "buyer_trn": "444555666",
+    "buyer_country": "SA",
+    "buyer_city": "Jeddah",
+    "total_excl_vat": 200,
+    "vat_amount": 10,
+    "total_incl_vat": 210,
+    "lines": [
+      {
+        "sku": "C3",
+        "description": "Widget C",
+        "qty": 2,
+        "unit_price": 100,
+        "line_total": 200
+      }
+    ]
+  }
+]

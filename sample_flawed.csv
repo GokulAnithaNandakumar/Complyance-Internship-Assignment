@@ -1,0 +1,5 @@
+inv_no,issued_on,curr,sellerName,sellerTax,buyerName,buyerTax,totalNet,vat,grandTotal,lineSku,lineQty,linePrice,lineTotal,buyerCountry
+INV-2001,2025/01/10,EURO,Omega LLC,ABC123,Theta LLC,900900900,100,12,112,X1,2,50,100,AE
+INV-2002,2025-01-11,AED,Sigma LLC,555666777,Zeta Co,888999000,300,15,315,X2,3,50,100,AE
+INV-2003,2025-13-12,MYR,Omicron Ltd,333444555,Lambda Ltd,222333444,120,6,126,X3,1,120,120,MY
+INV-2004,2025-01-12,SAR,Nu LLC,999888777,Mu Co,777666555,100,5,104,X4,2,50,99,SA
