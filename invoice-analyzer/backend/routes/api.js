@@ -332,322 +332,162 @@ router.get('/share/:reportId/pdf', async (req, res) => {
 
     console.log('Generating PDF for report:', reportId);
 
-    // Generate PDF using Puppeteer by navigating to the frontend page
-    const puppeteer = require('puppeteer');
-    let browser;
+    // Generate PDF using PDFKit (server-side, no browser required)
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument();
 
-    try {
-      browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security']
-      });
-
-      const page = await browser.newPage();
-
-      // Set viewport for better rendering
-      await page.setViewport({ width: 1200, height: 800 });
-
-      // Navigate to the share page
-      const shareUrl = `https://complyance-internship-assignment.vercel.app/share/${reportId}`;
-      console.log('Navigating to:', shareUrl);
-
-      const response = await page.goto(shareUrl, {
-        waitUntil: 'networkidle0',
-        timeout: 30000
-      });
-
-      if (!response || !response.ok()) {
-        throw new Error(`Failed to load page: ${response ? response.status() : 'No response'}`);
-      }
-
-      console.log('Page loaded successfully');
-
-      // Wait for content to load with a more robust check
-      try {
-        await page.waitForFunction(() => {
-          const hasContent = document.querySelector('.MuiPaper-root') ||
-                           document.querySelector('[class*="MuiCard"]') ||
-                           document.querySelector('[class*="results"]');
-          console.log('Checking for content:', !!hasContent);
-          return hasContent;
-        }, { timeout: 15000 });
-        console.log('Content found on page');
-      } catch (waitError) {
-        console.log('Wait timeout, but continuing with PDF generation');
-      }
-
-      // Wait a bit more for any async data loading
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Hide navigation and non-essential elements for PDF
-      await page.addStyleTag({
-        content: `
-          /* Hide navigation */
-          .MuiAppBar-root { display: none !important; }
-
-          /* Hide buttons */
-          button { display: none !important; }
-
-          /* Better PDF styling */
-          body {
-            margin: 0 !important;
-            padding: 20px !important;
-            background: white !important;
-          }
-
-          .MuiContainer-root {
-            max-width: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-
-          .MuiPaper-root {
-            box-shadow: none !important;
-            margin: 0 !important;
-            border: none !important;
-          }
-
-          /* Ensure text is readable in PDF */
-          * {
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-          }
-
-          /* Hide loading spinners */
-          .MuiCircularProgress-root {
-            display: none !important;
-          }
-        `
-      });
-
-      // Generate PDF
-      console.log('Generating PDF...');
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '15mm',
-          bottom: '20mm',
-          left: '15mm'
-        },
-        preferCSSPageSize: true
-      });
-
-      console.log('PDF generated successfully');
-
+    // Collect PDF data in memory
+    const buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      const pdfData = Buffer.concat(buffers);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
-      res.send(pdf);
+      res.send(pdfData);
+    });
 
-    } finally {
-      if (browser) {
-        await browser.close();
+    // PDF Content Generation
+    try {
+      // Header
+      doc.fontSize(24).fillColor('#1976d2').text('E-Invoicing Readiness Analysis Report', 50, 50);
+      doc.fontSize(12).fillColor('#666').text(`Report ID: ${reportId}`, 50, 85);
+      doc.fontSize(12).text(`Generated: ${new Date().toLocaleString()}`, 50, 100);
+
+      // Draw header line
+      doc.strokeColor('#1976d2').lineWidth(2).moveTo(50, 125).lineTo(550, 125).stroke();
+
+      let yPosition = 150;
+
+      // Overall Score Section
+      if (report.scores_overall) {
+        doc.fontSize(18).fillColor('#333').text('Overall Readiness Score', 50, yPosition);
+        yPosition += 30;
+
+        const scoreColor = report.scores_overall >= 80 ? '#4caf50' :
+                          report.scores_overall >= 60 ? '#ff9800' : '#f44336';
+
+        doc.fontSize(48).fillColor(scoreColor).text(`${report.scores_overall}%`, 50, yPosition);
+        doc.fontSize(14).fillColor('#666').text('Compliance Score', 200, yPosition + 15);
+        yPosition += 80;
       }
-    }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
-    res.send(pdf);
+      // Report Details Section
+      if (report.report_json) {
+        const reportData = typeof report.report_json === 'string' ?
+                          JSON.parse(report.report_json) : report.report_json;
+
+        // Summary Statistics
+        doc.fontSize(16).fillColor('#333').text('Analysis Summary', 50, yPosition);
+        yPosition += 25;
+
+        if (reportData.summary) {
+          const summary = reportData.summary;
+          doc.fontSize(12).fillColor('#666');
+
+          if (summary.totalRows) {
+            doc.text(`Total Records Analyzed: ${summary.totalRows}`, 50, yPosition);
+            yPosition += 20;
+          }
+
+          if (summary.validRows !== undefined) {
+            doc.text(`Valid Records: ${summary.validRows}`, 50, yPosition);
+            yPosition += 20;
+          }
+
+          if (summary.errorRows !== undefined) {
+            doc.text(`Records with Errors: ${summary.errorRows}`, 50, yPosition);
+            yPosition += 20;
+          }
+        }
+
+        yPosition += 20;
+
+        // Field Analysis
+        if (reportData.fieldAnalysis) {
+          doc.fontSize(16).fillColor('#333').text('Field Analysis', 50, yPosition);
+          yPosition += 25;
+
+          Object.entries(reportData.fieldAnalysis).forEach(([field, analysis]) => {
+            if (yPosition > 700) { // New page if needed
+              doc.addPage();
+              yPosition = 50;
+            }
+
+            doc.fontSize(14).fillColor('#333').text(`${field}:`, 50, yPosition);
+            yPosition += 18;
+
+            if (analysis.completeness !== undefined) {
+              doc.fontSize(11).fillColor('#666').text(`Completeness: ${(analysis.completeness * 100).toFixed(1)}%`, 70, yPosition);
+              yPosition += 15;
+            }
+
+            if (analysis.accuracy !== undefined) {
+              doc.fontSize(11).text(`Accuracy: ${(analysis.accuracy * 100).toFixed(1)}%`, 70, yPosition);
+              yPosition += 15;
+            }
+
+            if (analysis.issues && analysis.issues.length > 0) {
+              doc.fontSize(11).fillColor('#f44336').text(`Issues: ${analysis.issues.slice(0, 3).join(', ')}`, 70, yPosition);
+              yPosition += 15;
+            }
+
+            yPosition += 10;
+          });
+        }
+
+        // Error Summary
+        if (reportData.errors && reportData.errors.length > 0) {
+          if (yPosition > 600) { // New page if needed
+            doc.addPage();
+            yPosition = 50;
+          }
+
+          doc.fontSize(16).fillColor('#333').text('Common Issues', 50, yPosition);
+          yPosition += 25;
+
+          const errorSummary = {};
+          reportData.errors.forEach(error => {
+            const key = error.type || 'General';
+            errorSummary[key] = (errorSummary[key] || 0) + 1;
+          });
+
+          Object.entries(errorSummary).slice(0, 10).forEach(([errorType, count]) => {
+            doc.fontSize(11).fillColor('#666').text(`${errorType}: ${count} occurrences`, 50, yPosition);
+            yPosition += 15;
+          });
+        }
+      }
+
+      // Footer
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 0; i < pageCount; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(10).fillColor('#999')
+           .text(`Page ${i + 1} of ${pageCount}`, 50, doc.page.height - 50);
+        doc.text('Generated by E-Invoicing Readiness Analyzer', 350, doc.page.height - 50);
+      }
+
+      doc.end();
+
+    } catch (error) {
+      console.error('PDFKit generation error:', error);
+      doc.end();
+      return res.status(500).json({
+        error: 'PDF generation failed',
+        message: error.message
+      });
+    }
 
   } catch (error) {
     console.error('PDF generation error:', error);
-
-    // Fallback: Try to generate PDF from report data directly
-    try {
-      console.log('Attempting fallback PDF generation...');
-
-      if (!report) {
-        throw new Error('Report data not available for fallback PDF generation');
-      }
-
-      const puppeteer = require('puppeteer');
-      const browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-
-      const page = await browser.newPage();
-
-      // Create a simple HTML representation of the report
-      const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <meta charset="UTF-8">
-          <title>Invoice Analysis Report - ${reportId}</title>
-          <style>
-              body {
-                  font-family: 'Segoe UI', Arial, sans-serif;
-                  margin: 20px;
-                  color: #333;
-                  line-height: 1.6;
-              }
-              .header {
-                  text-align: center;
-                  border-bottom: 2px solid #1976d2;
-                  padding-bottom: 20px;
-                  margin-bottom: 30px;
-              }
-              .score-grid {
-                  display: grid;
-                  grid-template-columns: repeat(3, 1fr);
-                  gap: 20px;
-                  margin: 30px 0;
-              }
-              .score-card {
-                  text-align: center;
-                  padding: 20px;
-                  background: #f8f9fa;
-                  border-radius: 8px;
-              }
-              .score-value {
-                  font-size: 2.5em;
-                  font-weight: bold;
-                  color: #1976d2;
-                  margin-bottom: 10px;
-              }
-              .section {
-                  margin: 30px 0;
-              }
-              .section h2 {
-                  color: #1976d2;
-                  border-bottom: 1px solid #ddd;
-                  padding-bottom: 10px;
-              }
-              .rule-item {
-                  padding: 15px;
-                  margin: 10px 0;
-                  border-left: 4px solid #ddd;
-                  background: #fafafa;
-              }
-              .rule-passed {
-                  border-left-color: #4caf50;
-                  background: #f1f8e9;
-              }
-              .rule-failed {
-                  border-left-color: #f44336;
-                  background: #ffebee;
-              }
-              .field-item {
-                  padding: 10px;
-                  margin: 5px 0;
-                  background: #e3f2fd;
-                  border-left: 4px solid #2196f3;
-              }
-              .metadata {
-                  background: #f5f5f5;
-                  padding: 20px;
-                  border-radius: 8px;
-                  margin-top: 30px;
-              }
-          </style>
-      </head>
-      <body>
-          <div class="header">
-              <h1>E-Invoicing Readiness Report</h1>
-              <p><strong>Report ID:</strong> ${reportId}</p>
-              <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-          </div>
-
-          <div class="score-grid">
-              <div class="score-card">
-                  <div class="score-value">${report.readinessScore || 0}</div>
-                  <div>Readiness Score</div>
-              </div>
-              <div class="score-card">
-                  <div class="score-value">${report.fieldCoverage || 0}%</div>
-                  <div>Field Coverage</div>
-              </div>
-              <div class="score-card">
-                  <div class="score-value">${report.rulesPassed || 0}/${report.totalRules || 0}</div>
-                  <div>Rules Passed</div>
-              </div>
-          </div>
-
-          <div class="section">
-              <h2>Validation Rules</h2>
-              ${(report.ruleFindings || []).map(rule => `
-                  <div class="rule-item ${rule.passed ? 'rule-passed' : 'rule-failed'}">
-                      <strong>${rule.ruleId || 'Unknown Rule'}:</strong> ${rule.description || 'No description'}
-                      <br><em>Status: ${rule.passed ? 'PASSED' : 'FAILED'}</em>
-                      ${rule.issues && rule.issues.length > 0 ? `
-                          <br><strong>Issues:</strong><br>
-                          ${rule.issues.map(issue => `• ${issue}`).join('<br>')}
-                      ` : ''}
-                  </div>
-              `).join('')}
-          </div>
-
-          <div class="section">
-              <h2>Field Coverage (${(report.mappedFields || []).length}/${report.totalRequiredFields || 0})</h2>
-              ${(report.mappedFields || []).map(field => `
-                  <div class="field-item">
-                      <strong>${field.getsField || 'Unknown Field'}</strong>
-                      ${field.sourceField ? ` ← ${field.sourceField}` : ' (Not mapped)'}
-                      ${field.sampleValue ? `<br><em>Sample: ${field.sampleValue}</em>` : ''}
-                  </div>
-              `).join('')}
-          </div>
-
-          ${report.aiInsights ? `
-              <div class="section">
-                  <h2>AI Insights & Recommendations</h2>
-                  <p><strong>Overall Assessment:</strong> ${report.aiInsights.overallAssessment || 'No assessment available'}</p>
-
-                  ${report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0 ? `
-                      <h3>Priority Issues:</h3>
-                      ${report.aiInsights.priorityIssues.map(issue => `<p>• ${typeof issue === 'string' ? issue : JSON.stringify(issue)}</p>`).join('')}
-                  ` : ''}
-
-                  ${report.aiInsights.nextSteps && report.aiInsights.nextSteps.length > 0 ? `
-                      <h3>Next Steps:</h3>
-                      ${report.aiInsights.nextSteps.map(step => `<p>• ${typeof step === 'string' ? step : JSON.stringify(step)}</p>`).join('')}
-                  ` : ''}
-              </div>
-          ` : ''}
-
-          <div class="metadata">
-              <h2>Report Metadata</h2>
-              <p><strong>Original File:</strong> ${report.originalFileName || 'Unknown'}</p>
-              <p><strong>File Size:</strong> ${report.fileSize ? (report.fileSize / 1024).toFixed(2) + ' KB' : 'Unknown'}</p>
-              <p><strong>Records Processed:</strong> ${report.recordCount || 'Unknown'}</p>
-              <p><strong>Analysis Duration:</strong> ${report.processingTime || 'Unknown'}</p>
-          </div>
-      </body>
-      </html>`;
-
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '15mm',
-          bottom: '20mm',
-          left: '15mm'
-        }
-      });
-
-      await browser.close();
-
-      console.log('Fallback PDF generated successfully');
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
-      res.send(pdf);
-
-    } catch (fallbackError) {
-      console.error('Fallback PDF generation also failed:', fallbackError);
-      res.status(500).json({
-        error: error.message,
-        details: 'Failed to generate PDF report',
-        fallbackError: fallbackError.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
-    }
+    res.status(500).json({
+      error: 'PDF generation failed',
+      message: error.message
+    });
   }
-});// GET /reports - Get recent reports (P1 feature)
+});
+
+// GET /reports - Get recent reports (P1 feature)
 router.get('/reports', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 reports
