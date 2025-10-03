@@ -1,0 +1,11 @@
+invoice_id,supplier_name,invoice_date,due_date,total_amount,currency,tax_amount,line_items,supplier_tax_id,buyer_name,invoice_status
+INV-2024-001,"Tech Solutions Ltd","2024-03-15","2024-04-15",1250.00,USD,125.00,5,"TAX123456789","Acme Corp","paid"
+INV-2024-002,"Office Supplies Inc","2024-03-18","2024-04-18",875.50,EUR,87.55,3,"EU987654321","Global Tech","pending"
+INV-2024-003,"Marketing Agency Pro","2024-03-20","2024-04-20",2400.00,USD,240.00,8,"TAX555666777","StartupXYZ","overdue"
+INV-2024-004,"Cloud Services Co","2024-03-22","2024-04-22",1850.75,GBP,185.08,4,"UK111222333","Enterprise Ltd","paid"
+INV-2024-005,"Software Licensing","2024-03-25","2024-04-25",3200.00,USD,320.00,2,"TAX444555666","DevCorp","pending"
+INV-2024-006,"Consulting Group","2024-03-28","2024-04-28",5500.00,EUR,550.00,12,"EU789123456","MegaCorp","paid"
+INV-2024-007,"Hardware Store","2024-03-30","2024-04-30",975.25,USD,97.53,6,"TAX888999000","BuildCo","pending"
+INV-2024-008,"Travel Agency","2024-04-02","2024-05-02",1675.80,USD,167.58,7,"TAX111333555","BusinessCorp","overdue"
+INV-2024-009,"Legal Services","2024-04-05","2024-05-05",4200.00,GBP,420.00,3,"UK666777888","LegalTech","paid"
+INV-2024-010,"Maintenance Co","2024-04-08","2024-05-08",825.40,EUR,82.54,4,"EU222444666","PropertyMgmt","pending"

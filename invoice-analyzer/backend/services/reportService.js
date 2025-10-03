@@ -7,9 +7,9 @@ class ReportService {
   }
 
   // Generate a complete analysis report
-  async generateReport(uploadId, processedData, fieldMapping, rulesValidation, scores, questionnaire) {
+  async generateReport(uploadId, processedData, fieldMapping, rulesValidation, scores, questionnaire, aiInsights = null) {
     const reportId = `r_${uuidv4().replace(/-/g, '').substring(0, 12)}`;
-    
+
     const report = {
       reportId,
       uploadId,
@@ -85,7 +85,13 @@ class ReportService {
         responses: questionnaire,
         score: scores.posture
       },
-      recommendations: this.generateRecommendations(fieldMapping, rulesValidation, scores)
+      recommendations: this.generateRecommendations(fieldMapping, rulesValidation, scores),
+      aiInsights: aiInsights || {
+        overallAssessment: "AI insights are not available for this report.",
+        priorityIssues: [],
+        fieldMappingSuggestions: [],
+        nextSteps: []
+      }
     };
 
     // Save report to database
@@ -97,10 +103,10 @@ class ReportService {
   // Save report to database
   async saveReport(reportId, uploadId, reportJson) {
     const expiresAt = this.calculateExpiryDate();
-    
+
     try {
       await pool.query(
-        `INSERT INTO reports (id, upload_id, scores_overall, report_json, expires_at) 
+        `INSERT INTO reports (id, upload_id, scores_overall, report_json, expires_at)
          VALUES ($1, $2, $3, $4, $5)`,
         [reportId, uploadId, reportJson.scores.overall, JSON.stringify(reportJson), expiresAt]
       );

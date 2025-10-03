@@ -1,0 +1,289 @@
+{
+  "reportId": "r_a4214a89a29f",
+  "uploadId": "u_abf848b5c5ca",
+  "meta": {
+    "version": "1.0",
+    "generated_at": "2025-10-02T14:32:17.768Z",
+    "expires_at": "2025-10-09T14:32:17.768Z",
+    "db": "postgres",
+    "rows_analyzed": 5,
+    "total_rows": 5,
+    "truncated": false
+  },
+  "scores": {
+    "overall": 57,
+    "breakdown": {
+      "data": 100,
+      "coverage": 75,
+      "rules": 20,
+      "posture": 0
+    },
+    "readiness": {
+      "level": "Low",
+      "description": "Significant improvements required",
+      "color": "red"
+    },
+    "weights": {
+      "data": "25%",
+      "coverage": "35%",
+      "rules": "30%",
+      "posture": "10%"
+    }
+  },
+  "coverage": {
+    "summary": {
+      "total_fields": 19,
+      "matched": 7,
+      "close": 11,
+      "missing": 1
+    },
+    "matches": [
+      {
+        "gets_field": "invoice.id",
+        "source_field": "invoice_id",
+        "confidence": 100,
+        "required": true
+      },
+      {
+        "gets_field": "invoice.issue_date",
+        "source_field": "invoice_date",
+        "confidence": 100,
+        "required": true
+      },
+      {
+        "gets_field": "invoice.currency",
+        "source_field": "currency",
+        "confidence": 100,
+        "required": true
+      },
+      {
+        "gets_field": "invoice.vat_amount",
+        "source_field": "tax_amount",
+        "confidence": 100,
+        "required": true
+      },
+      {
+        "gets_field": "invoice.total_incl_vat",
+        "source_field": "total_amount",
+        "confidence": 100,
+        "required": true
+      },
+      {
+        "gets_field": "seller.name",
+        "source_field": "supplier_name",
+        "confidence": 100,
+        "required": true
+      },
+      {
+        "gets_field": "buyer.name",
+        "source_field": "buyer_name",
+        "confidence": 100,
+        "required": true
+      }
+    ],
+    "close": [
+      {
+        "gets_field": "invoice.total_excl_vat",
+        "source_field": "tax_amount",
+        "confidence": 73,
+        "required": true,
+        "suggestion": "'tax_amount' likely maps to 'invoice.total_excl_vat' (data type match)"
+      },
+      {
+        "gets_field": "seller.trn",
+        "source_field": "supplier_tax_id",
+        "confidence": 59,
+        "required": true,
+        "suggestion": "'supplier_tax_id' likely maps to 'seller.trn' (data type match)"
+      },
+      {
+        "gets_field": "seller.city",
+        "source_field": "invoice_type",
+        "confidence": 40,
+        "required": false,
+        "suggestion": "'invoice_type' likely maps to 'seller.city' (name similarity)"
+      },
+      {
+        "gets_field": "buyer.trn",
+        "source_field": "buyer_name",
+        "confidence": 73,
+        "required": true,
+        "suggestion": "'buyer_name' likely maps to 'buyer.trn' (data type match)"
+      },
+      {
+        "gets_field": "buyer.country",
+        "source_field": "buyer_name",
+        "confidence": 55,
+        "required": true,
+        "suggestion": "'buyer_name' likely maps to 'buyer.country' (name similarity)"
+      },
+      {
+        "gets_field": "buyer.city",
+        "source_field": "buyer_name",
+        "confidence": 61,
+        "required": false,
+        "suggestion": "'buyer_name' likely maps to 'buyer.city' (data type match)"
+      },
+      {
+        "gets_field": "lines[].sku",
+        "source_field": "invoice_status",
+        "confidence": 34,
+        "required": true,
+        "suggestion": "'invoice_status' likely maps to 'lines[].sku' (name similarity)"
+      },
+      {
+        "gets_field": "lines[].description",
+        "source_field": "buyer_name",
+        "confidence": 40,
+        "required": false,
+        "suggestion": "'buyer_name' likely maps to 'lines[].description' (name similarity)"
+      },
+      {
+        "gets_field": "lines[].qty",
+        "source_field": "tax_amount",
+        "confidence": 73,
+        "required": true,
+        "suggestion": "'tax_amount' likely maps to 'lines[].qty' (name similarity)"
+      },
+      {
+        "gets_field": "lines[].unit_price",
+        "source_field": "line_items",
+        "confidence": 49,
+        "required": true,
+        "suggestion": "'line_items' likely maps to 'lines[].unit_price' (field position)"
+      },
+      {
+        "gets_field": "lines[].line_total",
+        "source_field": "tax_amount",
+        "confidence": 73,
+        "required": true,
+        "suggestion": "'tax_amount' likely maps to 'lines[].line_total' (data type match)"
+      }
+    ],
+    "missing": [
+      {
+        "gets_field": "seller.country",
+        "required": true,
+        "type": "string"
+      }
+    ]
+  },
+  "rules": {
+    "summary": {
+      "total_rules": 5,
+      "passed": 1,
+      "failed": 4,
+      "score": 20
+    },
+    "results": [
+      {
+        "rule_id": "TOTALS_BALANCE",
+        "name": "Totals Balance Check",
+        "passed": false,
+        "description": "Verify that total_excl_vat + vat_amount = total_incl_vat",
+        "details": "Required fields for total balance check not found",
+        "example_line": null,
+        "suggestion": "Ensure total_incl_vat = total_excl_vat + vat_amount"
+      },
+      {
+        "rule_id": "LINE_MATH",
+        "name": "Line Item Math Check",
+        "passed": false,
+        "description": "Verify that line_total = qty × unit_price for each line",
+        "details": "Required fields for line math check not found",
+        "example_line": null,
+        "suggestion": "Verify line_total = quantity × unit_price for each line item"
+      },
+      {
+        "rule_id": "DATE_ISO",
+        "name": "ISO Date Format Check",
+        "passed": true,
+        "description": "Verify that invoice dates are in YYYY-MM-DD format",
+        "details": "5/5 rows have valid ISO dates",
+        "example_line": null,
+        "suggestion": null
+      },
+      {
+        "rule_id": "CURRENCY_VALID",
+        "name": "Valid Currency Check",
+        "passed": false,
+        "description": "Verify that currency is one of: AED, SAR, MYR, USD",
+        "details": "3/5 rows have valid currency",
+        "example_line": {
+          "row": 2,
+          "value": "EUR",
+          "validOptions": "AED, SAR, MYR, USD"
+        },
+        "suggestion": "Use valid currencies: AED, SAR, MYR, or USD"
+      },
+      {
+        "rule_id": "TRN_PRESENT",
+        "name": "TRN Presence Check",
+        "passed": false,
+        "description": "Verify that both buyer and seller TRN are non-empty",
+        "details": "TRN fields not found",
+        "example_line": null,
+        "suggestion": "Ensure both buyer and seller TRN fields are populated"
+      }
+    ]
+  },
+  "questionnaire": {
+    "responses": {
+      "webhooks": false,
+      "sandbox_env": false,
+      "retries": false
+    },
+    "score": 0
+  },
+  "recommendations": [
+    {
+      "category": "Required Fields",
+      "priority": "High",
+      "title": "Add Missing Required Fields",
+      "description": "1 required field(s) are missing: seller.country",
+      "action": "Ensure all required fields are present in your data."
+    },
+    {
+      "category": "Data Quality",
+      "priority": "Medium",
+      "title": "Fix Totals Balance Check",
+      "description": "Required fields for total balance check not found",
+      "action": "Ensure total_incl_vat = total_excl_vat + vat_amount"
+    },
+    {
+      "category": "Data Quality",
+      "priority": "Medium",
+      "title": "Fix Line Item Math Check",
+      "description": "Required fields for line math check not found",
+      "action": "Verify line_total = quantity × unit_price for each line item"
+    },
+    {
+      "category": "Data Quality",
+      "priority": "High",
+      "title": "Fix Valid Currency Check",
+      "description": "3/5 rows have valid currency",
+      "action": "Use valid currencies: AED, SAR, MYR, or USD"
+    },
+    {
+      "category": "Data Quality",
+      "priority": "High",
+      "title": "Fix TRN Presence Check",
+      "description": "TRN fields not found",
+      "action": "Ensure both buyer and seller TRN fields are populated"
+    },
+    {
+      "category": "Implementation Readiness",
+      "priority": "Medium",
+      "title": "Improve Integration Capabilities",
+      "description": "Low posture score indicates limited integration readiness.",
+      "action": "Consider implementing webhooks, sandbox environment, and retry mechanisms."
+    },
+    {
+      "category": "Overall Readiness",
+      "priority": "High",
+      "title": "Significant Improvements Required",
+      "description": "Overall readiness score of 57% indicates major gaps.",
+      "action": "Address high-priority issues in field mapping and data quality before proceeding with e-invoicing implementation."
+    }
+  ]
+}

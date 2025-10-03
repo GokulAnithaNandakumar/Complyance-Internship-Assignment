@@ -96,10 +96,10 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  
+
   // Don't leak error details in production
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error',
     ...(isDevelopment && { stack: err.stack }),
@@ -108,13 +108,13 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
     message: `The endpoint ${req.method} ${req.originalUrl} was not found`,
     availableEndpoints: [
       'POST /upload',
-      'POST /analyze', 
+      'POST /analyze',
       'GET /report/:reportId',
       'GET /reports',
       'GET /health'
@@ -139,7 +139,7 @@ const startServer = async () => {
     // Test database connection
     console.log('Testing database connection...');
     const dbConnected = await testConnection();
-    
+
     if (!dbConnected) {
       console.error('Failed to connect to database. Please check your DATABASE_URL.');
       process.exit(1);

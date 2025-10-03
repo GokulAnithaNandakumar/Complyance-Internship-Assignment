@@ -17,8 +17,8 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['text/csv', 'application/json', 'text/plain'];
-    if (allowedTypes.includes(file.mimetype) || 
-        file.originalname.endsWith('.csv') || 
+    if (allowedTypes.includes(file.mimetype) ||
+        file.originalname.endsWith('.csv') ||
         file.originalname.endsWith('.json')) {
       cb(null, true);
     } else {
@@ -26,6 +26,117 @@ const upload = multer({
     }
   }
 });
+
+// AI Insights function using Gemini API
+async function generateAiInsights(reportData, ruleFindings, coverage) {
+  const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return {
+      overallAssessment: "AI insights are not available. Please configure GEMINI_API_KEY environment variable.",
+      priorityIssues: [],
+      fieldMappingSuggestions: [],
+      nextSteps: []
+    };
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `
+You are an expert e-invoicing compliance analyst. Analyze this invoice readiness report and provide actionable insights.
+
+REPORT DATA:
+- Overall Score: ${reportData.scores?.overall || 0}%
+- Data Quality: ${reportData.scores?.breakdown?.data || 0}%
+- Coverage: ${reportData.scores?.breakdown?.coverage || 0}%
+- Rules Compliance: ${reportData.scores?.breakdown?.rules || 0}%
+- Technical Posture: ${reportData.scores?.breakdown?.posture || 0}%
+
+FAILED RULES:
+${ruleFindings?.filter(r => !r.ok).map(r => `- ${r.rule}: ${r.value ? `Invalid value "${r.value}"` : ''} ${r.exampleLine ? `(Line ${r.exampleLine})` : ''}`).join('\n') || 'None'}
+
+FIELD COVERAGE ANALYSIS:
+- Total GETS fields required: ${(coverage?.matches?.length || 0) + (coverage?.close?.length || 0) + (coverage?.missing?.length || 0)}
+- Successfully mapped: ${coverage?.matches?.length || 0}
+- Close matches needing review: ${coverage?.close?.length || 0}
+- Missing critical fields: ${coverage?.missing?.length || 0}
+
+MISSING FIELDS: ${coverage?.missing?.map(m => m.gets_field || m).join(', ') || 'None'}
+CLOSE MATCHES: ${coverage?.close?.map(c => `${c.source_field}→${c.gets_field}(${c.confidence}%)`).join(', ') || 'None'}
+
+Focus your analysis on:
+1. Critical missing fields that impact compliance
+2. Data quality issues affecting e-invoicing
+3. Field mapping improvements to boost coverage
+4. Specific steps to improve the overall readiness score
+
+Provide a JSON response with:
+1. overallAssessment: Brief 2-3 sentence summary of readiness
+2. priorityIssues: Array of {issue, recommendation} for critical problems (max 5)
+3. fieldMappingSuggestions: Array of {mapping, rationale, priority} for close matches and missing fields (max 5)
+4. nextSteps: Array of actionable next steps prioritized by impact (max 5)
+
+Keep responses concise and business-focused.
+`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    // Try to parse JSON response
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', parseError);
+    }
+
+    // Fallback response if JSON parsing fails
+    return {
+      overallAssessment: "Your invoice data shows areas for improvement in GETS compliance. Focus on addressing rule violations and field mapping first.",
+      priorityIssues: ruleFindings?.filter(r => !r.ok).slice(0, 3).map(r => ({
+        issue: `${r.rule.replace(/_/g, ' ')} validation failed`,
+        recommendation: getBasicRecommendation(r.rule, r)
+      })) || [],
+      fieldMappingSuggestions: coverage?.close?.slice(0, 3).map(c => ({
+        mapping: `${c.source_field} → ${c.gets_field}`,
+        rationale: `${c.confidence}% confidence based on field similarity`
+      })) || [],
+      nextSteps: [
+        "Fix critical rule violations first",
+        "Review and confirm field mappings",
+        "Validate data quality and completeness",
+        "Test with additional invoice samples",
+        "Consider implementing automated validation"
+      ]
+    };
+
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    return {
+      overallAssessment: "AI insights temporarily unavailable. Please try again later.",
+      priorityIssues: [],
+      fieldMappingSuggestions: [],
+      nextSteps: []
+    };
+  }
+}
+
+function getBasicRecommendation(rule, finding) {
+  const recommendations = {
+    'TOTALS_BALANCE': 'Verify calculation: total_excl_vat + vat_amount = total_incl_vat',
+    'LINE_MATH': `Check line ${finding.exampleLine || ''} calculation: qty × unit_price = line_total`,
+    'DATE_ISO': 'Convert dates to YYYY-MM-DD format',
+    'CURRENCY_ALLOWED': `Change currency to one of: AED, SAR, MYR, USD`,
+    'TRN_PRESENT': 'Add missing tax registration numbers'
+  };
+  return recommendations[rule] || 'Please review and fix this validation error';
+}
 
 // Initialize services
 const uploadService = new UploadService();
@@ -99,10 +210,10 @@ router.post('/analyze', async (req, res) => {
 
     // Validate upload exists
     const upload = await uploadService.validateUpload(uploadId);
-    
+
     // Get the processed data from data store
     const storedData = await dataStore.getData(uploadId);
-    
+
     if (!storedData) {
       return res.status(404).json({
         error: 'Upload data not found',
@@ -126,14 +237,32 @@ router.post('/analyze', async (req, res) => {
       questionnaire
     );
 
-    // Generate report
+    // Generate AI insights
+    const ruleFindings = rulesValidation.results.map(r => ({
+      rule: r.ruleId,
+      ok: r.passed,
+      value: r.details?.value,
+      exampleLine: r.exampleLine
+    }));
+
+    const coverage = {
+      matches: fieldMapping.matches,
+      close: fieldMapping.close,
+      missing: fieldMapping.missing
+    };
+
+    const reportData = { scores };
+    const aiInsights = await generateAiInsights(reportData, ruleFindings, coverage);
+
+    // Generate report with AI insights
     const report = await reportService.generateReport(
       uploadId,
       processedData,
       fieldMapping,
       rulesValidation,
       scores,
-      questionnaire
+      questionnaire,
+      aiInsights
     );
 
     res.json(report);
@@ -200,12 +329,39 @@ router.get('/reports', async (req, res) => {
   }
 });
 
+// AI Insights endpoint
+// POST /ai-insights - Generate AI-powered insights and recommendations
+router.post('/ai-insights', async (req, res) => {
+  try {
+    const { reportData, ruleFindings, coverage } = req.body;
+
+    if (!reportData) {
+      return res.status(400).json({
+        error: 'Missing report data',
+        message: 'Report data is required for AI insights generation'
+      });
+    }
+
+    // Generate AI insights using Gemini API
+    const insights = await generateAiInsights(reportData, ruleFindings, coverage);
+
+    res.json(insights);
+
+  } catch (error) {
+    console.error('AI insights error:', error);
+    res.status(500).json({
+      error: error.message,
+      details: 'Failed to generate AI insights'
+    });
+  }
+});
+
 // GET /health - Health check endpoint
 router.get('/health', async (req, res) => {
   try {
     const { testConnection } = require('../config/database');
     const dbConnected = await testConnection();
-    
+
     const uploadStats = await uploadService.getUploadStats();
     const storeStats = dataStore.getStats();
 
@@ -222,7 +378,11 @@ router.get('/health', async (req, res) => {
         dataStore: storeStats
       },
       version: '1.0.0',
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
+      database: {
+        type: 'postgres',
+        status: dbConnected ? 'connected' : 'disconnected'
+      }
     });
 
   } catch (error) {

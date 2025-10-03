@@ -22,7 +22,7 @@ class RulesValidator {
         validate: this.validateDateISO.bind(this)
       },
       {
-        id: 'CURRENCY_VALID',
+        id: 'CURRENCY_ALLOWED',
         name: 'Valid Currency Check',
         description: 'Verify that currency is one of: AED, SAR, MYR, USD',
         validate: this.validateCurrency.bind(this)
@@ -65,7 +65,7 @@ class RulesValidator {
   // Rule 1: TOTALS_BALANCE - total_excl_vat + vat_amount = total_incl_vat (±0.01)
   validateTotalsBalance(data, fieldMapping) {
     const { matches } = fieldMapping;
-    
+
     const totalExclField = this.findMappedField('invoice.total_excl_vat', matches);
     const vatAmountField = this.findMappedField('invoice.vat_amount', matches);
     const totalInclField = this.findMappedField('invoice.total_incl_vat', matches);
@@ -85,7 +85,7 @@ class RulesValidator {
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const flattened = flattenObject(row);
-      
+
       const totalExcl = parseFloat(flattened[totalExclField]) || 0;
       const vatAmount = parseFloat(flattened[vatAmountField]) || 0;
       const totalIncl = parseFloat(flattened[totalInclField]) || 0;
@@ -116,7 +116,7 @@ class RulesValidator {
   // Rule 2: LINE_MATH - line_total = qty × unit_price (±0.01)
   validateLineMath(data, fieldMapping) {
     const { matches } = fieldMapping;
-    
+
     const qtyField = this.findMappedField('lines[].qty', matches);
     const priceField = this.findMappedField('lines[].unit_price', matches);
     const totalField = this.findMappedField('lines[].line_total', matches);
@@ -135,13 +135,13 @@ class RulesValidator {
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
-      
+
       // Handle both nested lines and flattened structure
       const lines = row.lines || [row];
-      
+
       for (const line of lines) {
         const flattened = flattenObject(line);
-        
+
         const qty = parseFloat(flattened[qtyField.replace('lines[].', '')] || flattened[qtyField]) || 0;
         const price = parseFloat(flattened[priceField.replace('lines[].', '')] || flattened[priceField]) || 0;
         const lineTotal = parseFloat(flattened[totalField.replace('lines[].', '')] || flattened[totalField]) || 0;
@@ -175,7 +175,7 @@ class RulesValidator {
   // Rule 3: DATE_ISO - invoice.issue_date matches YYYY-MM-DD
   validateDateISO(data, fieldMapping) {
     const { matches } = fieldMapping;
-    
+
     const dateField = this.findMappedField('invoice.issue_date', matches);
 
     if (!dateField) {
@@ -225,10 +225,10 @@ class RulesValidator {
     };
   }
 
-  // Rule 4: CURRENCY_VALID - currency is AED, SAR, MYR, or USD
+  // Rule 4: CURRENCY_ALLOWED - currency is AED, SAR, MYR, or USD
   validateCurrency(data, fieldMapping) {
     const { matches } = fieldMapping;
-    
+
     const currencyField = this.findMappedField('invoice.currency', matches);
 
     if (!currencyField) {
@@ -271,7 +271,7 @@ class RulesValidator {
   // Rule 5: TRN_PRESENT - buyer.trn and seller.trn non-empty
   validateTRNPresence(data, fieldMapping) {
     const { matches } = fieldMapping;
-    
+
     const buyerTrnField = this.findMappedField('buyer.trn', matches);
     const sellerTrnField = this.findMappedField('seller.trn', matches);
 
@@ -290,7 +290,7 @@ class RulesValidator {
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const flattened = flattenObject(row);
-      
+
       const buyerTrn = flattened[buyerTrnField];
       const sellerTrn = flattened[sellerTrnField];
 
@@ -327,7 +327,7 @@ class RulesValidator {
       'TOTALS_BALANCE': 'Ensure total_incl_vat = total_excl_vat + vat_amount',
       'LINE_MATH': 'Verify line_total = quantity × unit_price for each line item',
       'DATE_ISO': 'Use ISO dates like 2025-01-31 (YYYY-MM-DD format)',
-      'CURRENCY_VALID': 'Use valid currencies: AED, SAR, MYR, or USD',
+      'CURRENCY_ALLOWED': 'Use valid currencies: AED, SAR, MYR, or USD',
       'TRN_PRESENT': 'Ensure both buyer and seller TRN fields are populated'
     };
 
