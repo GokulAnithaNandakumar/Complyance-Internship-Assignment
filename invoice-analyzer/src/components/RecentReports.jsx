@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Card,
     CardContent,
@@ -20,13 +21,15 @@ import {
 import {
     OpenInNew,
     Refresh,
-    Assessment
+    Assessment,
+    ViewList
 } from '@mui/icons-material';
 import axios from 'axios';
 import { formatDate, getReadinessLevel } from '../utils/helpers';
 import { api } from '../utils/api';
 
 const RecentReports = () => {
+    const navigate = useNavigate();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -159,6 +162,20 @@ const RecentReports = () => {
                             </TableBody>
                         </Table>
                     </TableContainer>
+                )}
+
+                {/* See More Button */}
+                {reports.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ViewList />}
+                            onClick={() => navigate('/reports')}
+                            size="small"
+                        >
+                            See All Reports
+                        </Button>
+                    </Box>
                 )}
             </CardContent>
         </Card>

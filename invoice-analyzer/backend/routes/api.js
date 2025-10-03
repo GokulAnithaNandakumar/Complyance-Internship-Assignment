@@ -6,6 +6,7 @@ const RulesValidator = require('../services/rulesValidator');
 const ScoringService = require('../services/scoringService');
 const ReportService = require('../services/reportService');
 const dataStore = require('../services/dataStore');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -265,6 +266,9 @@ router.post('/analyze', async (req, res) => {
       aiInsights
     );
 
+    // Save report to persistent storage (required by PRD)
+    await dataStore.saveReport(report);
+
     res.json(report);
 
   } catch (error) {
@@ -272,6 +276,39 @@ router.post('/analyze', async (req, res) => {
     res.status(500).json({
       error: error.message,
       details: 'Failed to analyze uploaded data'
+    });
+  }
+});
+
+// GET /report/:reportId - Retrieve saved report JSON (required by PRD)
+router.get('/report/:reportId', async (req, res) => {
+  try {
+    const { reportId } = req.params;
+
+    if (!reportId) {
+      return res.status(400).json({
+        error: 'Missing report ID',
+        message: 'Report ID is required'
+      });
+    }
+
+    const report = await dataStore.getReport(reportId);
+
+    if (!report) {
+      return res.status(404).json({
+        error: 'Report not found',
+        message: `No report found with ID: ${reportId}`
+      });
+    }
+
+    // Return the raw report JSON as specified in PRD
+    res.json(report);
+    
+  } catch (error) {
+    console.error('Report retrieval error:', error);
+    res.status(500).json({
+      error: 'Failed to retrieve report',
+      message: error.message
     });
   }
 });
@@ -308,7 +345,7 @@ router.get('/share/:reportId', async (req, res) => {
   }
 });
 
-// GET /share/:reportId/pdf - Export report as PDF
+// GET /share/:reportId/pdf - Export report as PDF (Fixed Layout)
 router.get('/share/:reportId/pdf', async (req, res) => {
   const { reportId } = req.params;
 
@@ -319,9 +356,8 @@ router.get('/share/:reportId/pdf', async (req, res) => {
     });
   }
 
-  let report;
   try {
-    report = await reportService.getReport(reportId);
+    const report = await reportService.getReport(reportId);
 
     if (!report) {
       return res.status(404).json({
@@ -332,9 +368,9 @@ router.get('/share/:reportId/pdf', async (req, res) => {
 
     console.log('Generating PDF for report:', reportId);
 
-    // Generate PDF using PDFKit (server-side, no browser required)
+    // Generate PDF using PDFKit with fixed layout
     const PDFDocument = require('pdfkit');
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
     // Collect PDF data in memory
     const buffers = [];
@@ -346,262 +382,321 @@ router.get('/share/:reportId/pdf', async (req, res) => {
       res.send(pdfData);
     });
 
-    // PDF Content Generation
+    // PDF Content Generation with fixed spacing
     try {
-    try {
-      // Modern Header Design
-      doc.fontSize(20).fillColor('#1976d2').text('Analysis Report - ' + reportId, 50, 40);
-      doc.fontSize(14).fillColor('#666').text('Analysis Results', 50, 70);
-      
-      // Large Score Display
-      let yPos = 100;
+      let y = 60;
+      const pageWidth = 515; // A4 width minus margins
+
+      // Header Section
+      doc.fontSize(22).fillColor('#1976d2').text(`Analysis Report - ${reportId}`, 40, y);
+      y += 35;
+
+      doc.fontSize(16).fillColor('#333').text('Analysis Results', 40, y);
+      y += 45;
+
+      // Large Overall Score
       if (report.scores && report.scores.overall !== undefined) {
         const scoreColor = report.scores.overall >= 80 ? '#4caf50' :
                           report.scores.overall >= 60 ? '#ff9800' : '#f44336';
-        
-        doc.fontSize(60).fillColor(scoreColor).text(`${report.scores.overall}`, 50, yPos);
-        doc.fontSize(16).fillColor('#333').text('Overall Readiness Score', 130, yPos + 15);
-        
+
+        doc.fontSize(64).fillColor(scoreColor).text(`${report.scores.overall}`, 40, y);
+        doc.fontSize(16).fillColor('#333').text('Overall Readiness Score', 150, y + 20);
+
         // Readiness Level
-        const readinessLevel = typeof report.scores.readiness === 'object' ? 
-                              report.scores.readiness.level || 'Unknown' : 
-                              report.scores.readiness;
-        doc.fontSize(14).fillColor('#666').text(readinessLevel, 130, yPos + 40);
-        yPos += 90;
+        const readinessLevel = report.scores.readiness?.level || 'Unknown';
+        doc.fontSize(14).fillColor('#666').text(readinessLevel, 150, y + 40);
+        y += 85;
       }
 
-      // Score Breakdown Grid
+      // Score Breakdown - 2x2 Grid with proper spacing
       if (report.scores && report.scores.breakdown) {
         const breakdown = report.scores.breakdown;
         const weights = report.scores.weights || {};
-        
-        // Data Quality
-        doc.fontSize(14).fillColor('#333').text('Data Quality', 50, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.data}%`, 50, yPos + 20);
-        doc.fontSize(10).fillColor('#666').text(`Data parsing & type validation (${weights.data || '25%'})`, 50, yPos + 50);
-        
-        // Coverage
-        doc.fontSize(14).fillColor('#333').text('Coverage', 300, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.coverage}%`, 300, yPos + 20);
-        doc.fontSize(10).fillColor('#666').text(`Field mapping to GETS schema (${weights.coverage || '35%'})`, 300, yPos + 50);
-        
-        yPos += 80;
-        
-        // Rules
-        doc.fontSize(14).fillColor('#333').text('Rules', 50, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.rules}%`, 50, yPos + 20);
-        doc.fontSize(10).fillColor('#666').text(`Business rule validation (${weights.rules || '30%'})`, 50, yPos + 50);
-        
-        // Posture
-        doc.fontSize(14).fillColor('#333').text('Posture', 300, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.posture}%`, 300, yPos + 20);
-        doc.fontSize(10).fillColor('#666').text(`Technical readiness (${weights.posture || '10%'})`, 300, yPos + 50);
-        
-        yPos += 90;
+        const boxWidth = 230;
+        const boxHeight = 75;
+        const spacing = 25;
+
+        // Data Quality (Top Left)
+        doc.rect(40, y, boxWidth, boxHeight).fillAndStroke('#f8f9fa', '#e9ecef');
+        doc.fontSize(12).fillColor('#333').text('Data Quality', 50, y + 8);
+        doc.fontSize(24).fillColor('#1976d2').text(`${breakdown.data}%`, 50, y + 25);
+        doc.fontSize(9).fillColor('#666').text(`Data parsing & type validation (${weights.data || '25%'})`, 50, y + 52, { width: boxWidth - 20 });
+
+        // Rules (Top Right)
+        doc.rect(40 + boxWidth + spacing, y, boxWidth, boxHeight).fillAndStroke('#f8f9fa', '#e9ecef');
+        doc.fontSize(12).fillColor('#333').text('Rules', 50 + boxWidth + spacing, y + 8);
+        doc.fontSize(24).fillColor('#1976d2').text(`${breakdown.rules}%`, 50 + boxWidth + spacing, y + 25);
+        doc.fontSize(9).fillColor('#666').text(`Business rule validation (${weights.rules || '30%'})`, 50 + boxWidth + spacing, y + 52, { width: boxWidth - 20 });
+
+        y += boxHeight + 15;
+
+        // Coverage (Bottom Left)
+        doc.rect(40, y, boxWidth, boxHeight).fillAndStroke('#f8f9fa', '#e9ecef');
+        doc.fontSize(12).fillColor('#333').text('Coverage', 50, y + 8);
+        doc.fontSize(24).fillColor('#1976d2').text(`${breakdown.coverage}%`, 50, y + 25);
+        doc.fontSize(9).fillColor('#666').text(`Field mapping to GETS schema (${weights.coverage || '35%'})`, 50, y + 52, { width: boxWidth - 20 });
+
+        // Posture (Bottom Right)
+        doc.rect(40 + boxWidth + spacing, y, boxWidth, boxHeight).fillAndStroke('#f8f9fa', '#e9ecef');
+        doc.fontSize(12).fillColor('#333').text('Posture', 50 + boxWidth + spacing, y + 8);
+        doc.fontSize(24).fillColor('#1976d2').text(`${breakdown.posture}%`, 50 + boxWidth + spacing, y + 25);
+        doc.fontSize(9).fillColor('#666').text(`Technical readiness (${weights.posture || '10%'})`, 50 + boxWidth + spacing, y + 52, { width: boxWidth - 20 });
+
+        y += boxHeight + 35;
       }
 
-      // Field Coverage Summary
+      // Field Coverage Analysis
       if (report.coverage && report.coverage.summary) {
-        doc.fontSize(16).fillColor('#333').text('Field Coverage Analysis', 50, yPos);
-        yPos += 30;
-        
+        doc.fontSize(16).fillColor('#333').text('Field Coverage Analysis', 40, y);
+        y += 30;
+
         const summary = report.coverage.summary;
-        const boxWidth = 120;
-        const boxHeight = 60;
-        
-        // Matched box
-        doc.rect(50, yPos, boxWidth, boxHeight).fillAndStroke('#e8f5e8', '#4caf50');
-        doc.fontSize(20).fillColor('#333').text(`${summary.matched}`, 50 + boxWidth/2 - 15, yPos + 15);
-        doc.fontSize(12).fillColor('#333').text('Matched', 50 + boxWidth/2 - 25, yPos + 40);
-        
-        // Close Match box
-        doc.rect(200, yPos, boxWidth, boxHeight).fillAndStroke('#fff3e0', '#ff9800');
-        doc.fontSize(20).fillColor('#333').text(`${summary.close}`, 200 + boxWidth/2 - 15, yPos + 15);
-        doc.fontSize(12).fillColor('#333').text('Close Match', 200 + boxWidth/2 - 35, yPos + 40);
-        
-        // Missing box
-        doc.rect(350, yPos, boxWidth, boxHeight).fillAndStroke('#ffebee', '#f44336');
-        doc.fontSize(20).fillColor('#333').text(`${summary.missing}`, 350 + boxWidth/2 - 15, yPos + 15);
-        doc.fontSize(12).fillColor('#333').text('Missing', 350 + boxWidth/2 - 25, yPos + 40);
-        
-        yPos += 100;
-      }
+        const coverageBoxWidth = 140;
+        const coverageBoxHeight = 80;
+        const coverageSpacing = 25;
 
-      // Start new page for validation results
-      doc.addPage();
-      yPos = 50;
+        // Matched
+        doc.rect(40, y, coverageBoxWidth, coverageBoxHeight).fillAndStroke('#e8f5e8', '#4caf50');
+        doc.fontSize(28).fillColor('#333').text(`${summary.matched}`, 40 + coverageBoxWidth/2 - 15, y + 20);
+        doc.fontSize(12).fillColor('#333').text('Matched', 40 + coverageBoxWidth/2 - 25, y + 55);
 
-      // Validation Results Section
-      if (report.rules) {
-        const rules = report.rules;
-        doc.fontSize(18).fillColor('#333').text(`Validation Results (${rules.summary.passed}/${rules.summary.total_rules} Passing)`, 50, yPos);
-        yPos += 40;
+        // Close Match
+        doc.rect(40 + coverageBoxWidth + coverageSpacing, y, coverageBoxWidth, coverageBoxHeight).fillAndStroke('#fff3e0', '#ff9800');
+        doc.fontSize(28).fillColor('#333').text(`${summary.close}`, 40 + coverageBoxWidth + coverageSpacing + coverageBoxWidth/2 - 15, y + 20);
+        doc.fontSize(12).fillColor('#333').text('Close Match', 40 + coverageBoxWidth + coverageSpacing + coverageBoxWidth/2 - 35, y + 55);
 
-        // Display each rule
-        if (rules.results && rules.results.length > 0) {
-          rules.results.forEach(rule => {
-            if (yPos > 650) {
+        // Missing
+        doc.rect(40 + 2*(coverageBoxWidth + coverageSpacing), y, coverageBoxWidth, coverageBoxHeight).fillAndStroke('#ffebee', '#f44336');
+        doc.fontSize(28).fillColor('#333').text(`${summary.missing}`, 40 + 2*(coverageBoxWidth + coverageSpacing) + coverageBoxWidth/2 - 15, y + 20);
+        doc.fontSize(12).fillColor('#333').text('Missing', 40 + 2*(coverageBoxWidth + coverageSpacing) + coverageBoxWidth/2 - 25, y + 55);
+
+        y += coverageBoxHeight + 35;
+
+        // Field Details
+        if (report.coverage.matches && report.coverage.matches.length > 0) {
+          doc.fontSize(14).fillColor('#333').text('Key Matched Fields:', 40, y);
+          y += 20;
+
+          report.coverage.matches.slice(0, 8).forEach(match => {
+            if (y > 700) {
               doc.addPage();
-              yPos = 50;
+              y = 60;
             }
-
-            // Rule name and description
-            doc.fontSize(14).fillColor('#333').text(rule.name, 50, yPos);
-            doc.fontSize(10).fillColor('#666').text(rule.description, 50, yPos + 20, { width: 500 });
-            yPos += 45;
-
-            // Status
-            if (rule.passed) {
-              doc.fontSize(12).fillColor('#4caf50').text('PASS', 50, yPos);
-            } else {
-              doc.fontSize(12).fillColor('#f44336').text('FAIL', 50, yPos);
-              yPos += 20;
-              
-              // Error details
-              if (rule.details) {
-                doc.fontSize(10).fillColor('#f44336').text(`❌ ${rule.details}`, 50, yPos);
-                yPos += 15;
-              }
-              
-              // Suggestion
-              if (rule.suggestion) {
-                doc.fontSize(10).fillColor('#666').text(`Solution: ${rule.suggestion}`, 50, yPos, { width: 500 });
-                yPos += 20;
-              }
-            }
-            
-            yPos += 30;
+            doc.fontSize(10).fillColor('#4caf50').text(`✓ ${match.gets_field} ← ${match.source_field} (${match.confidence}%)`, 50, y);
+            y += 15;
           });
+          y += 15;
+        }
+
+        if (report.coverage.missing && report.coverage.missing.length > 0) {
+          doc.fontSize(14).fillColor('#333').text('Missing Required Fields:', 40, y);
+          y += 20;
+
+          report.coverage.missing.slice(0, 8).forEach(missing => {
+            if (y > 700) {
+              doc.addPage();
+              y = 60;
+            }
+            doc.fontSize(10).fillColor('#f44336').text(`✗ ${missing.gets_field} (${missing.type})`, 50, y);
+            y += 15;
+          });
+          y += 15;
+        }
+
+        if (report.coverage.close && report.coverage.close.length > 0) {
+          doc.fontSize(14).fillColor('#333').text('Close Matches (Need Review):', 40, y);
+          y += 20;
+
+          report.coverage.close.slice(0, 6).forEach(close => {
+            if (y > 700) {
+              doc.addPage();
+              y = 60;
+            }
+            doc.fontSize(10).fillColor('#ff9800').text(`? ${close.gets_field} ← ${close.source_field} (${close.confidence}%)`, 50, y);
+            y += 15;
+          });
+          y += 25;
         }
       }
 
-      // Add new page for AI insights if needed
-      if (yPos > 500) {
+      // Validation Results Section
+      if (y > 600) {
         doc.addPage();
-        yPos = 50;
+        y = 60;
+      }
+
+      if (report.rules) {
+        const rules = report.rules;
+        doc.fontSize(18).fillColor('#333').text(`Validation Results (${rules.summary.passed}/${rules.summary.total_rules} Passing)`, 40, y);
+        y += 40;
+
+        // Display each rule with improved formatting
+        if (rules.results && rules.results.length > 0) {
+          rules.results.forEach((rule) => {
+            if (y > 650) {
+              doc.addPage();
+              y = 60;
+            }
+
+            // Rule container
+            const ruleHeight = rule.passed ? 80 : 110;
+            doc.rect(40, y, pageWidth, ruleHeight).fillAndStroke('#fafafa', '#e0e0e0');
+
+            // Rule name
+            doc.fontSize(13).fillColor('#333').text(rule.name, 50, y + 10);
+            doc.fontSize(10).fillColor('#666').text(rule.description, 50, y + 30, { width: 350 });
+
+            // Status indicator
+            if (rule.passed) {
+              doc.fontSize(12).fillColor('#4caf50').text('PASS', 420, y + 15);
+              doc.fontSize(16).fillColor('#4caf50').text('✓', 470, y + 12);
+            } else {
+              doc.fontSize(12).fillColor('#f44336').text('FAIL', 420, y + 15);
+              doc.fontSize(16).fillColor('#f44336').text('✗', 470, y + 12);
+
+              // Error details
+              if (rule.details) {
+                doc.fontSize(9).fillColor('#f44336').text(`${rule.details}`, 50, y + 50, { width: 350 });
+              }
+
+              // Solution
+              if (rule.suggestion) {
+                doc.fontSize(9).fillColor('#333').text(`Solution: ${rule.suggestion}`, 50, y + 70, { width: 350 });
+              }
+            }
+
+            y += ruleHeight + 15;
+          });
+        }
       }
 
       // AI Insights Section
       if (report.aiInsights && report.aiInsights.overallAssessment !== "AI insights are not available for this report.") {
-        doc.fontSize(18).fillColor('#333').text('AI-Powered Insights & Recommendations', 50, yPos);
-        yPos += 40;
+        // Add new page if needed
+        if (y > 450) {
+          doc.addPage();
+          y = 60;
+        }
+
+        doc.fontSize(18).fillColor('#333').text('AI-Powered Insights & Recommendations', 40, y);
+        y += 35;
 
         // Overall Assessment
-        doc.fontSize(14).fillColor('#333').text('Overall Assessment', 50, yPos);
-        yPos += 20;
-        doc.fontSize(10).fillColor('#666').text(report.aiInsights.overallAssessment, 50, yPos, { width: 500 });
-        yPos += 60;
+        doc.fontSize(14).fillColor('#333').text('Overall Assessment', 40, y);
+        y += 20;
+        doc.fontSize(10).fillColor('#666').text(report.aiInsights.overallAssessment, 40, y, { width: pageWidth, lineGap: 2 });
+        y += Math.ceil(report.aiInsights.overallAssessment.length / 80) * 12 + 25;
 
         // Priority Issues
         if (report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0) {
-          doc.fontSize(14).fillColor('#333').text('Priority Issues to Fix', 50, yPos);
-          yPos += 25;
+          if (y > 600) {
+            doc.addPage();
+            y = 60;
+          }
+
+          doc.fontSize(14).fillColor('#333').text('Priority Issues to Fix', 40, y);
+          y += 25;
 
           report.aiInsights.priorityIssues.slice(0, 5).forEach((issue, index) => {
-            if (yPos > 650) {
+            if (y > 650) {
               doc.addPage();
-              yPos = 50;
+              y = 60;
             }
 
-            // Handle both string and object formats
-            let issueTitle = '';
-            let issueDescription = '';
-            
-            if (typeof issue === 'string') {
-              issueTitle = issue;
-            } else if (typeof issue === 'object') {
-              issueTitle = issue.issue || issue.title || `Priority Issue ${index + 1}`;
-              issueDescription = issue.recommendation || issue.description || '';
-            }
+            // Issue title
+            const issueText = typeof issue === 'object' ? (issue.issue || issue.title || `Priority Issue ${index + 1}`) : issue;
+            const recommendationText = typeof issue === 'object' ? (issue.recommendation || issue.description || '') : '';
 
-            doc.fontSize(12).fillColor('#f44336').text(issueTitle, 50, yPos);
-            yPos += 18;
-            
-            if (issueDescription) {
-              doc.fontSize(10).fillColor('#666').text(issueDescription, 50, yPos, { width: 500 });
-              yPos += 25;
+            doc.fontSize(11).fillColor('#f44336').text(issueText, 40, y, { width: pageWidth });
+            y += 18;
+
+            if (recommendationText) {
+              doc.fontSize(10).fillColor('#666').text(recommendationText, 40, y, { width: pageWidth, lineGap: 1 });
+              y += Math.ceil(recommendationText.length / 100) * 12 + 20;
             }
-            
-            yPos += 10;
           });
+
+          y += 15;
         }
 
         // Field Mapping Suggestions
         if (report.aiInsights.fieldMappingSuggestions && report.aiInsights.fieldMappingSuggestions.length > 0) {
-          if (yPos > 500) {
+          if (y > 600) {
             doc.addPage();
-            yPos = 50;
+            y = 60;
           }
-          
-          doc.fontSize(14).fillColor('#333').text('Field Mapping Suggestions', 50, yPos);
-          yPos += 25;
 
-          report.aiInsights.fieldMappingSuggestions.slice(0, 5).forEach(suggestion => {
-            if (yPos > 650) {
+          doc.fontSize(14).fillColor('#333').text('Field Mapping Suggestions', 40, y);
+          y += 25;
+
+          report.aiInsights.fieldMappingSuggestions.slice(0, 5).forEach((suggestion, index) => {
+            if (y > 650) {
               doc.addPage();
-              yPos = 50;
+              y = 60;
             }
 
-            const mapping = typeof suggestion === 'object' ? suggestion.mapping || suggestion.title : suggestion;
-            const rationale = typeof suggestion === 'object' ? suggestion.rationale : '';
-            
-            doc.fontSize(11).fillColor('#1976d2').text(mapping, 50, yPos);
-            yPos += 15;
-            
-            if (rationale) {
-              doc.fontSize(9).fillColor('#666').text(rationale, 50, yPos, { width: 500 });
-              yPos += 20;
+            // Mapping suggestion
+            const mappingText = typeof suggestion === 'object' ? 
+              (suggestion.mapping || suggestion.field || `Mapping ${index + 1}`) : suggestion;
+            const rationaleText = typeof suggestion === 'object' ? 
+              (suggestion.rationale || suggestion.description || '') : '';
+            const priorityText = typeof suggestion === 'object' ? 
+              (suggestion.priority || 'Medium') : 'Medium';
+
+            doc.fontSize(11).fillColor('#2196f3').text(`${mappingText}`, 40, y, { width: pageWidth });
+            y += 18;
+
+            if (rationaleText) {
+              doc.fontSize(10).fillColor('#666').text(rationaleText, 40, y, { width: pageWidth, lineGap: 1 });
+              y += Math.ceil(rationaleText.length / 100) * 12 + 10;
             }
-            
-            yPos += 10;
+
+            // Priority indicator
+            const priorityColor = priorityText.toLowerCase() === 'high' ? '#f44336' : 
+                                priorityText.toLowerCase() === 'medium' ? '#ff9800' : '#4caf50';
+            doc.fontSize(9).fillColor(priorityColor).text(`Priority: ${priorityText}`, 40, y, { width: pageWidth });
+            y += 20;
           });
+
+          y += 15;
         }
 
-        // Next Steps
+        // Recommended Next Steps
         if (report.aiInsights.nextSteps && report.aiInsights.nextSteps.length > 0) {
-          if (yPos > 400) {
+          if (y > 550) {
             doc.addPage();
-            yPos = 50;
+            y = 60;
           }
-          
-          doc.fontSize(14).fillColor('#333').text('Recommended Next Steps', 50, yPos);
-          yPos += 25;
+
+          doc.fontSize(14).fillColor('#333').text('Recommended Next Steps', 40, y);
+          y += 25;
 
           report.aiInsights.nextSteps.slice(0, 5).forEach((step, index) => {
-            if (yPos > 650) {
+            if (y > 650) {
               doc.addPage();
-              yPos = 50;
+              y = 60;
             }
 
-            const stepText = typeof step === 'object' ? step.step || step.action : step;
-            doc.fontSize(10).fillColor('#333').text(`${index + 1}. ${stepText}`, 50, yPos, { width: 500 });
-            yPos += 25;
+            const stepText = typeof step === 'object' ? (step.step || step.action || step.title || `Step ${index + 1}`) : step;
+            doc.fontSize(10).fillColor('#333').text(`${index + 1}. ${stepText}`, 40, y, { width: pageWidth, lineGap: 1 });
+            y += Math.ceil(stepText.length / 100) * 12 + 15;
           });
         }
       }
 
-      // Footer - add page numbers
+      // Footer with page numbers
       const range = doc.bufferedPageRange();
       for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
-        doc.fontSize(10).fillColor('#999')
-           .text(`Page ${i - range.start + 1} of ${range.count}`, 50, doc.page.height - 50);
-        doc.text('Generated by E-Invoicing Readiness Analyzer', 350, doc.page.height - 50);
+        doc.fontSize(9).fillColor('#999')
+           .text(`Page ${i - range.start + 1} of ${range.count}`, 40, doc.page.height - 30);
+        doc.text('Generated by E-Invoicing Readiness Analyzer', 300, doc.page.height - 30);
       }
 
       doc.end();
 
     } catch (error) {
-      console.error('PDFKit generation error:', error);
-      doc.end();
-      return res.status(500).json({
-        error: 'PDF generation failed',
-        message: error.message
-      });
-    }
-
-    } catch (error) {
-      console.error('PDFKit generation error:', error);
+      console.error('PDF generation error:', error);
       doc.end();
       return res.status(500).json({
         error: 'PDF generation failed',
@@ -622,7 +717,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
 router.get('/reports', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 reports
-    const reports = await reportService.getRecentReports(limit);
+    const reports = await dataStore.getRecentReports(limit);
 
     res.json({
       reports,
@@ -701,6 +796,57 @@ router.get('/health', async (req, res) => {
       status: 'unhealthy',
       error: error.message,
       timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// POST /share/:reportId/email - Email report link (P1 feature)
+router.post('/share/:reportId/email', async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const { email } = req.body;
+
+    if (!reportId) {
+      return res.status(400).json({
+        error: 'Missing report ID',
+        message: 'Report ID is required'
+      });
+    }
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Missing email address',
+        message: 'Email address is required'
+      });
+    }
+
+    // Get the report data for email content
+    const report = await dataStore.getReport(reportId);
+    if (!report) {
+      return res.status(404).json({
+        error: 'Report not found',
+        message: `No report found with ID: ${reportId}`
+      });
+    }
+
+    // Send email with report link
+    const result = await emailService.sendReportLink(reportId, email, report);
+
+    res.json({
+      success: true,
+      message: 'Report link sent successfully',
+      email: email,
+      reportId: reportId,
+      messageId: result.messageId,
+      shareUrl: result.shareUrl,
+      pdfUrl: result.pdfUrl
+    });
+
+  } catch (error) {
+    console.error('Email sending error:', error);
+    res.status(500).json({
+      error: 'Failed to send email',
+      message: error.message
     });
   }
 });

@@ -30,6 +30,8 @@
     "node-fetch": "^3.3.2",
     "pdfkit": "^0.17.2",
     "pg": "^8.16.3",
+    "puppeteer": "^24.23.0",
+    "resend": "^6.1.2",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

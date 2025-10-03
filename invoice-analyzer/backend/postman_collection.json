@@ -1,529 +1,466 @@
 {
   "info": {
     "name": "E-Invoicing Readiness Analyzer API",
-    "description": "Complete API testing collection for the E-Invoicing Readiness Analyzer backend",
+    "description": "Complete API collection for the E-Invoicing Readiness & Gap Analyzer tool. This tool analyzes invoice data against GETS v0.1 schema, performs validation rules, and generates readiness reports with AI insights.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "version": "1.0.0"
   },
+  "item": [
+    {
+      "name": "File Upload",
+      "item": [
+        {
+          "name": "Upload CSV/JSON File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "sample_clean.json",
+                  "description": "Upload CSV or JSON invoice data (max 5MB, first 200 rows processed)"
+                },
+                {
+                  "key": "country",
+                  "value": "UAE",
+                  "type": "text",
+                  "description": "Optional: Country code (UAE/KSA/MY/US)"
+                },
+                {
+                  "key": "erp",
+                  "value": "SAP",
+                  "type": "text",
+                  "description": "Optional: ERP system name"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload"]
+            },
+            "description": "Upload invoice data file for analysis. Supports CSV and JSON formats up to 5MB. Only first 200 rows are processed for performance."
+          },
+          "response": [
+            {
+              "name": "Successful Upload",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "sample_clean.json"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/upload",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["upload"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"uploadId\": \"u_1234567890\",\n  \"rowsParsed\": 45,\n  \"country\": \"UAE\",\n  \"erp\": \"SAP\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upload Text Data (JSON Body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"invoice_id,issue_date,currency,total_excl_vat\\n123,2025-01-15,AED,1000\",\n  \"country\": \"UAE\",\n  \"erp\": \"Custom\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload"]
+            },
+            "description": "Alternative upload method using JSON body with text content instead of file upload."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analysis",
+      "item": [
+        {
+          "name": "Analyze Upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uploadId\": \"{{uploadId}}\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["analyze"]
+            },
+            "description": "Analyze uploaded data against GETS v0.1 schema. Performs field mapping, rule validation, scoring, and generates AI insights."
+          },
+          "response": [
+            {
+              "name": "Analysis Complete",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"uploadId\": \"u_1234567890\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": false\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/analyze",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["analyze"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"reportId\": \"r_abcdef123456\",\n  \"scores\": {\n    \"data\": 95,\n    \"coverage\": 78,\n    \"rules\": 80,\n    \"posture\": 67,\n    \"overall\": 80\n  },\n  \"coverage\": {\n    \"matched\": [\"invoice.id\", \"invoice.issue_date\"],\n    \"close\": [\n      {\n        \"target\": \"seller.trn\",\n        \"candidate\": \"seller_tax_id\",\n        \"confidence\": 0.86\n      }\n    ],\n    \"missing\": [\"invoice.currency\"]\n  },\n  \"ruleFindings\": [\n    {\n      \"rule\": \"TOTALS_BALANCE\",\n      \"ok\": true\n    },\n    {\n      \"rule\": \"LINE_MATH\",\n      \"ok\": false,\n      \"exampleLine\": 2,\n      \"expected\": 120,\n      \"got\": 118\n    }\n  ],\n  \"aiInsights\": {\n    \"overallAssessment\": \"Your data shows good structure but needs field mapping improvements.\",\n    \"priorityIssues\": [],\n    \"fieldMappingSuggestions\": [],\n    \"nextSteps\": []\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Generate AI Insights",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportId\": \"{{reportId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-insights",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-insights"]
+            },
+            "description": "Generate detailed AI insights for an existing report using Gemini API."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Report JSON (Required by PRD)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report/{{reportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["report", "{{reportId}}"]
+            },
+            "description": "Get raw report JSON data. This is the required endpoint as specified in the PRD API contract."
+          },
+          "response": [
+            {
+              "name": "Report JSON",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/report/{{reportId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["report", "{{reportId}}"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"reportId\": \"r_abcdef123456\",\n  \"scores\": {\n    \"data\": 95,\n    \"coverage\": 78,\n    \"rules\": 80,\n    \"posture\": 67,\n    \"overall\": 80\n  },\n  \"coverage\": {\n    \"matched\": [\"invoice.id\", \"invoice.issue_date\"],\n    \"close\": [\n      {\n        \"target\": \"seller.trn\",\n        \"candidate\": \"seller_tax_id\",\n        \"confidence\": 0.86\n      }\n    ],\n    \"missing\": [\"invoice.currency\"]\n  },\n  \"ruleFindings\": [\n    {\n      \"rule\": \"TOTALS_BALANCE\",\n      \"ok\": true\n    },\n    {\n      \"rule\": \"LINE_MATH\",\n      \"ok\": false,\n      \"exampleLine\": 2,\n      \"expected\": 120,\n      \"got\": 118\n    }\n  ],\n  \"gaps\": [\"Missing buyer.trn\", \"Invalid currency EURO\"],\n  \"meta\": {\n    \"rowsParsed\": 120,\n    \"linesTotal\": 320,\n    \"country\": \"UAE\",\n    \"erp\": \"SAP\",\n    \"db\": \"postgres\"\n  },\n  \"aiInsights\": {\n    \"overallAssessment\": \"Your data shows good structure but needs improvements.\",\n    \"priorityIssues\": [],\n    \"fieldMappingSuggestions\": [],\n    \"nextSteps\": []\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Share Page (HTML)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/share/{{reportId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["share", "{{reportId}}"]
+            },
+            "description": "Get shareable HTML page for a report. This is the public view of the analysis results."
+          }
+        },
+        {
+          "name": "Download PDF Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/share/{{reportId}}/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["share", "{{reportId}}", "pdf"]
+            },
+            "description": "Download PDF version of the analysis report with comprehensive formatting."
+          }
+        },
+        {
+          "name": "Email Report Link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/share/{{reportId}}/email",
+              "host": ["{{baseUrl}}"],
+              "path": ["share", "{{reportId}}", "email"]
+            },
+            "description": "Send report link via email using Resend service. Includes both web view and PDF download links."
+          },
+          "response": [
+            {
+              "name": "Email Sent Successfully",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/share/{{reportId}}/email",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["share", "{{reportId}}", "email"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Report link sent successfully\",\n  \"email\": \"user@example.com\",\n  \"reportId\": \"r_abcdef123456\",\n  \"messageId\": \"msg_123456\",\n  \"shareUrl\": \"https://yourapp.com/share/r_abcdef123456\",\n  \"pdfUrl\": \"https://yourapp.com/share/r_abcdef123456/pdf\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Recent Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of reports to return"
+                }
+              ]
+            },
+            "description": "Get list of recent analysis reports for management dashboard."
+          }
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check system health including database connectivity and service status."
+          },
+          "response": [
+            {
+              "name": "Healthy System",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"healthy\",\n  \"database\": \"connected\",\n  \"db\": \"postgres\",\n  \"uptime\": \"2h 15m\",\n  \"timestamp\": \"2025-10-03T10:30:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set dynamic variables for testing",
+          "if (!pm.globals.get('uploadId')) {",
+          "    pm.globals.set('uploadId', 'u_' + Math.random().toString(36).substr(2, 9));",
+          "}",
+          "",
+          "if (!pm.globals.get('reportId')) {",
+          "    pm.globals.set('reportId', 'r_' + Math.random().toString(36).substr(2, 9));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-extract IDs from responses",
+          "if (pm.response.code === 200) {",
+          "    const jsonData = pm.response.json();",
+          "    ",
+          "    if (jsonData.uploadId) {",
+          "        pm.globals.set('uploadId', jsonData.uploadId);",
+          "        console.log('Extracted uploadId:', jsonData.uploadId);",
+          "    }",
+          "    ",
+          "    if (jsonData.reportId) {",
+          "        pm.globals.set('reportId', jsonData.reportId);",
+          "        console.log('Extracted reportId:', jsonData.reportId);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://complyance-internship-assignment-backend.onrender.com",
-      "type": "string"
+      "value": "http://localhost:3001",
+      "description": "Base URL for the E-Invoicing Readiness Analyzer API"
     },
     {
       "key": "uploadId",
-      "value": "",
-      "type": "string"
+      "value": "u_sample123",
+      "description": "Upload ID from /upload endpoint"
     },
     {
       "key": "reportId",
-      "value": "",
-      "type": "string"
-    }
-  ],
-  "item": [
-    {
-      "name": "Health Check",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/health",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "health"
-          ]
-        },
-        "description": "Check API and database health status"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has status field', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('status');",
-              "    pm.expect(jsonData.status).to.eql('healthy');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Upload Clean JSON File",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "file",
-              "type": "file",
-              "src": "sample_clean.json",
-              "description": "Upload the clean sample JSON file"
-            },
-            {
-              "key": "country",
-              "value": "AE",
-              "type": "text"
-            },
-            {
-              "key": "erp",
-              "value": "SAP",
-              "type": "text"
-            }
-          ]
-        },
-        "url": {
-          "raw": "{{baseUrl}}/upload",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "upload"
-          ]
-        },
-        "description": "Upload the clean sample JSON file for testing"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has uploadId', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('uploadId');",
-              "    pm.collectionVariables.set('uploadId', jsonData.uploadId);",
-              "});",
-              "",
-              "pm.test('Response has metadata', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('metadata');",
-              "    pm.expect(jsonData.metadata).to.have.property('fileType');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Upload Flawed CSV File",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "file",
-              "type": "file",
-              "src": "sample_flawed.csv",
-              "description": "Upload the flawed sample CSV file"
-            },
-            {
-              "key": "country",
-              "value": "AE",
-              "type": "text"
-            },
-            {
-              "key": "erp",
-              "value": "Oracle",
-              "type": "text"
-            }
-          ]
-        },
-        "url": {
-          "raw": "{{baseUrl}}/upload",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "upload"
-          ]
-        },
-        "description": "Upload the flawed sample CSV file for testing validation rules"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has uploadId', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('uploadId');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Upload Text Data (JSON)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"text\": \"[{\\\"inv_id\\\": \\\"INV-TEST\\\", \\\"date\\\": \\\"2025-01-15\\\", \\\"currency\\\": \\\"AED\\\", \\\"seller_name\\\": \\\"Test Seller\\\", \\\"seller_trn\\\": \\\"123456789\\\", \\\"buyer_name\\\": \\\"Test Buyer\\\", \\\"buyer_trn\\\": \\\"987654321\\\", \\\"total_excl_vat\\\": 1000, \\\"vat_amount\\\": 50, \\\"total_incl_vat\\\": 1050}]\",\n  \"country\": \"AE\",\n  \"erp\": \"Custom\"\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/upload",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "upload"
-          ]
-        },
-        "description": "Upload JSON data as text string"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has uploadId', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('uploadId');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Analyze Data - High Readiness",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"uploadId\": \"{{uploadId}}\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": true\n  }\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/analyze",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "analyze"
-          ]
-        },
-        "description": "Analyze uploaded data with high readiness questionnaire responses"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has reportId', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('reportId');",
-              "    pm.collectionVariables.set('reportId', jsonData.reportId);",
-              "});",
-              "",
-              "pm.test('Response has scores', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('scores');",
-              "    pm.expect(jsonData.scores).to.have.property('overall');",
-              "});",
-              "",
-              "pm.test('Response has coverage', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('coverage');",
-              "});",
-              "",
-              "pm.test('Response has rules', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('rules');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Analyze Data - Low Readiness",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"uploadId\": \"{{uploadId}}\",\n  \"questionnaire\": {\n    \"webhooks\": false,\n    \"sandbox_env\": false,\n    \"retries\": false\n  }\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/analyze",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "analyze"
-          ]
-        },
-        "description": "Analyze uploaded data with low readiness questionnaire responses"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Posture score should be low', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.scores.breakdown.posture).to.be.below(30);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Get Report by ID",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/report/{{reportId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "report",
-            "{{reportId}}"
-          ]
-        },
-        "description": "Retrieve a specific report by its ID"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response is valid report', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('reportId');",
-              "    pm.expect(jsonData).to.have.property('scores');",
-              "    pm.expect(jsonData).to.have.property('coverage');",
-              "    pm.expect(jsonData).to.have.property('rules');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Get Recent Reports",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/reports?limit=5",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "reports"
-          ],
-          "query": [
-            {
-              "key": "limit",
-              "value": "5"
-            }
-          ]
-        },
-        "description": "Get list of recent reports"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has reports array', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('reports');",
-              "    pm.expect(jsonData.reports).to.be.an('array');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Error Test - Invalid Upload ID",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"uploadId\": \"invalid_id\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": false\n  }\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/analyze",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "analyze"
-          ]
-        },
-        "description": "Test error handling with invalid upload ID"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 500', function () {",
-              "    pm.response.to.have.status(500);",
-              "});",
-              "",
-              "pm.test('Response has error message', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('error');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Error Test - Missing Report ID",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/report/nonexistent_report_id",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "report",
-            "nonexistent_report_id"
-          ]
-        },
-        "description": "Test error handling with non-existent report ID"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 404', function () {",
-              "    pm.response.to.have.status(404);",
-              "});",
-              "",
-              "pm.test('Response has error message', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('error');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "API Root Endpoint",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            ""
-          ]
-        },
-        "description": "Get API information and available endpoints"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status code is 200', function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "pm.test('Response has API info', function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('name');",
-              "    pm.expect(jsonData).to.have.property('version');",
-              "    pm.expect(jsonData).to.have.property('endpoints');",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
+      "value": "r_sample123",
+      "description": "Report ID from /analyze endpoint"
     }
   ]
 }

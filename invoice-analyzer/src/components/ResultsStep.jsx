@@ -22,7 +22,12 @@ import {
     Accordion,
     AccordionSummary,
     AccordionDetails,
-    Snackbar
+    Snackbar,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField
 } from '@mui/material';
 import {
     ArrowBack,
@@ -41,7 +46,8 @@ import {
     ContentCopy,
     OpenInNew,
     Link,
-    SmartToy
+    SmartToy,
+    Email
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -392,6 +398,9 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [aiInsights, setAiInsights] = useState(null);
     const [loadingInsights, setLoadingInsights] = useState(false);
+    const [emailDialog, setEmailDialog] = useState(false);
+    const [emailAddress, setEmailAddress] = useState('');
+    const [emailSending, setEmailSending] = useState(false);
 
     // Debug logging
     console.log('ResultsStep reportData:', reportData);
@@ -568,6 +577,32 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
             setSnackbarOpen(true);
         } finally {
             setLoadingInsights(false);
+        }
+    };
+
+    // Email functionality
+    const handleEmailReport = () => {
+        setEmailDialog(true);
+        setEmailAddress('');
+    };
+
+    const sendEmailReport = async () => {
+        if (!emailAddress || !reportData?.reportId) return;
+
+        setEmailSending(true);
+        try {
+            await axios.post(`${API_BASE_URL}/share/${reportData.reportId}/email`, {
+                email: emailAddress
+            });
+            setSnackbarMessage('Report link sent successfully!');
+            setSnackbarOpen(true);
+            setEmailDialog(false);
+            setEmailAddress('');
+        } catch (error) {
+            setSnackbarMessage(error.response?.data?.message || 'Failed to send email');
+            setSnackbarOpen(true);
+        } finally {
+            setEmailSending(false);
         }
     };
 
@@ -851,7 +886,7 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                     Export & Share
                 </Typography>
                 <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Button
                             fullWidth
                             variant="contained"
@@ -861,7 +896,7 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                             Download JSON
                         </Button>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Button
                             fullWidth
                             variant="contained"
@@ -872,7 +907,18 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                             Download PDF
                         </Button>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            startIcon={<Email />}
+                            onClick={handleEmailReport}
+                            disabled={!reportData?.reportId}
+                        >
+                            Email Report
+                        </Button>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Button
                             fullWidth
                             variant="outlined"
@@ -883,7 +929,7 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                             Copy Share Link
                         </Button>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Button
                             fullWidth
                             variant="outlined"
@@ -910,6 +956,53 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                     Start New Analysis
                 </Button>
             </Box>
+
+            {/* Email Dialog */}
+            <Dialog 
+                open={emailDialog} 
+                onClose={() => setEmailDialog(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" alignItems="center">
+                        <Email sx={{ mr: 1 }} />
+                        Email Report Link
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Send a link to this report via email. The recipient will receive both a web link and PDF download option.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="Email Address"
+                        type="email"
+                        fullWidth
+                        variant="outlined"
+                        value={emailAddress}
+                        onChange={(e) => setEmailAddress(e.target.value)}
+                        disabled={emailSending}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button 
+                        onClick={() => setEmailDialog(false)}
+                        disabled={emailSending}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={sendEmailReport}
+                        variant="contained"
+                        disabled={!emailAddress || emailSending}
+                        startIcon={emailSending ? <CircularProgress size={16} /> : <Email />}
+                    >
+                        {emailSending ? 'Sending...' : 'Send Email'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Snackbar for notifications */}
             <Snackbar

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import MainApp from './components/MainApp';
 import ReportPage from './components/ReportPage';
+import AllReportsPage from './components/AllReportsPage';
 
 // Create a default theme
 const theme = createTheme({
@@ -24,6 +25,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainApp />} />
           <Route path="/share/:reportId" element={<ReportPage />} />
+          <Route path="/reports" element={<AllReportsPage />} />
         </Routes>
       </Router>
     </ThemeProvider>
