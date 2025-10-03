@@ -319,7 +319,205 @@ router.get('/share/:reportId/pdf', async (req, res) => {
     });
   }
 
-  let report;
+  try {
+    const report = await reportService.getReport(reportId);
+
+    if (!report) {
+      return res.status(404).json({
+        error: 'Report not found',
+        message: 'The requested report was not found or has expired'
+      });
+    }
+
+    console.log('Generating PDF for report:', reportId);
+
+    // Use PDFKit for serverless-friendly PDF generation
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
+
+    // Pipe the PDF to the response
+    doc.pipe(res);
+
+    // Add content to PDF
+    doc.fontSize(20).text('E-Invoicing Readiness Report', 50, 50);
+    doc.fontSize(12).text(`Report ID: ${reportId}`, 50, 80);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 50, 95);
+
+    // Add line separator
+    doc.moveTo(50, 120).lineTo(550, 120).stroke();
+
+    let yPosition = 140;
+
+    // Scores section
+    doc.fontSize(16).text('Summary', 50, yPosition);
+    yPosition += 30;
+    
+    doc.fontSize(12);
+    doc.text(`Readiness Score: ${report.readinessScore || 0}`, 50, yPosition);
+    doc.text(`Field Coverage: ${report.fieldCoverage || 0}%`, 200, yPosition);
+    doc.text(`Rules Passed: ${report.rulesPassed || 0}/${report.totalRules || 0}`, 350, yPosition);
+    yPosition += 40;
+
+    // Rules section
+    doc.fontSize(16).text('Validation Rules', 50, yPosition);
+    yPosition += 25;
+
+    if (report.ruleFindings && report.ruleFindings.length > 0) {
+      doc.fontSize(10);
+      report.ruleFindings.forEach((rule, index) => {
+        if (yPosition > 700) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        const status = rule.passed ? '✓ PASSED' : '✗ FAILED';
+        doc.text(`${rule.ruleId || 'Unknown Rule'}: ${rule.description || 'No description'}`, 50, yPosition);
+        doc.text(status, 450, yPosition);
+        yPosition += 15;
+        
+        if (rule.issues && rule.issues.length > 0) {
+          rule.issues.forEach(issue => {
+            if (yPosition > 700) {
+              doc.addPage();
+              yPosition = 50;
+            }
+            doc.text(`  • ${issue}`, 70, yPosition);
+            yPosition += 12;
+          });
+        }
+        yPosition += 5;
+      });
+    }
+
+    yPosition += 20;
+
+    // Field Coverage section
+    if (yPosition > 650) {
+      doc.addPage();
+      yPosition = 50;
+    }
+
+    doc.fontSize(16).text('Field Coverage', 50, yPosition);
+    yPosition += 25;
+
+    if (report.mappedFields && report.mappedFields.length > 0) {
+      doc.fontSize(10);
+      doc.text(`Mapped ${report.mappedFields.length} of ${report.totalRequiredFields || 0} required fields:`, 50, yPosition);
+      yPosition += 20;
+
+      report.mappedFields.forEach((field, index) => {
+        if (yPosition > 700) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        const mapping = field.sourceField ? `${field.getsField} ← ${field.sourceField}` : `${field.getsField} (Not mapped)`;
+        doc.text(mapping, 50, yPosition);
+        
+        if (field.sampleValue) {
+          yPosition += 12;
+          doc.text(`  Sample: ${field.sampleValue}`, 70, yPosition);
+        }
+        yPosition += 15;
+      });
+    }
+
+    // AI Insights section
+    if (report.aiInsights) {
+      yPosition += 20;
+      if (yPosition > 650) {
+        doc.addPage();
+        yPosition = 50;
+      }
+
+      doc.fontSize(16).text('AI Insights & Recommendations', 50, yPosition);
+      yPosition += 25;
+
+      doc.fontSize(10);
+      if (report.aiInsights.overallAssessment) {
+        doc.text('Overall Assessment:', 50, yPosition);
+        yPosition += 15;
+        const assessment = typeof report.aiInsights.overallAssessment === 'string' 
+          ? report.aiInsights.overallAssessment 
+          : JSON.stringify(report.aiInsights.overallAssessment);
+        doc.text(assessment, 50, yPosition, { width: 500 });
+        yPosition += doc.heightOfString(assessment, { width: 500 }) + 15;
+      }
+
+      if (report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0) {
+        if (yPosition > 650) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        doc.text('Priority Issues:', 50, yPosition);
+        yPosition += 15;
+        
+        report.aiInsights.priorityIssues.forEach(issue => {
+          if (yPosition > 700) {
+            doc.addPage();
+            yPosition = 50;
+          }
+          const issueText = typeof issue === 'string' ? issue : JSON.stringify(issue);
+          doc.text(`• ${issueText}`, 70, yPosition);
+          yPosition += 15;
+        });
+      }
+
+      if (report.aiInsights.nextSteps && report.aiInsights.nextSteps.length > 0) {
+        yPosition += 10;
+        if (yPosition > 650) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        doc.text('Next Steps:', 50, yPosition);
+        yPosition += 15;
+        
+        report.aiInsights.nextSteps.forEach(step => {
+          if (yPosition > 700) {
+            doc.addPage();
+            yPosition = 50;
+          }
+          const stepText = typeof step === 'string' ? step : JSON.stringify(step);
+          doc.text(`• ${stepText}`, 70, yPosition);
+          yPosition += 15;
+        });
+      }
+    }
+
+    // Metadata section
+    yPosition += 20;
+    if (yPosition > 650) {
+      doc.addPage();
+      yPosition = 50;
+    }
+
+    doc.fontSize(16).text('Report Metadata', 50, yPosition);
+    yPosition += 25;
+
+    doc.fontSize(10);
+    doc.text(`Original File: ${report.originalFileName || 'Unknown'}`, 50, yPosition);
+    yPosition += 15;
+    doc.text(`File Size: ${report.fileSize ? (report.fileSize / 1024).toFixed(2) + ' KB' : 'Unknown'}`, 50, yPosition);
+    yPosition += 15;
+    doc.text(`Records Processed: ${report.recordCount || 'Unknown'}`, 50, yPosition);
+    yPosition += 15;
+    doc.text(`Analysis Duration: ${report.processingTime || 'Unknown'}`, 50, yPosition);
+
+    // Finalize the PDF
+    doc.end();
+
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    res.status(500).json({
+      error: 'PDF generation failed',
+      message: 'Unable to generate PDF report',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
   try {
     report = await reportService.getReport(reportId);
 
@@ -332,322 +530,196 @@ router.get('/share/:reportId/pdf', async (req, res) => {
 
     console.log('Generating PDF for report:', reportId);
 
-    // Generate PDF using Puppeteer by navigating to the frontend page
-    const puppeteer = require('puppeteer');
-    let browser;
+    const PDFDocument = require('pdfkit');
 
     try {
-      browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security']
+      // Create new PDF document
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 50
       });
 
-      const page = await browser.newPage();
-
-      // Set viewport for better rendering
-      await page.setViewport({ width: 1200, height: 800 });
-
-      // Navigate to the share page
-      const shareUrl = `https://complyance-internship-assignment.vercel.app/share/${reportId}`;
-      console.log('Navigating to:', shareUrl);
-
-      const response = await page.goto(shareUrl, {
-        waitUntil: 'networkidle0',
-        timeout: 30000
-      });
-
-      if (!response || !response.ok()) {
-        throw new Error(`Failed to load page: ${response ? response.status() : 'No response'}`);
-      }
-
-      console.log('Page loaded successfully');
-
-      // Wait for content to load with a more robust check
-      try {
-        await page.waitForFunction(() => {
-          const hasContent = document.querySelector('.MuiPaper-root') ||
-                           document.querySelector('[class*="MuiCard"]') ||
-                           document.querySelector('[class*="results"]');
-          console.log('Checking for content:', !!hasContent);
-          return hasContent;
-        }, { timeout: 15000 });
-        console.log('Content found on page');
-      } catch (waitError) {
-        console.log('Wait timeout, but continuing with PDF generation');
-      }
-
-      // Wait a bit more for any async data loading
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Hide navigation and non-essential elements for PDF
-      await page.addStyleTag({
-        content: `
-          /* Hide navigation */
-          .MuiAppBar-root { display: none !important; }
-
-          /* Hide buttons */
-          button { display: none !important; }
-
-          /* Better PDF styling */
-          body {
-            margin: 0 !important;
-            padding: 20px !important;
-            background: white !important;
-          }
-
-          .MuiContainer-root {
-            max-width: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-
-          .MuiPaper-root {
-            box-shadow: none !important;
-            margin: 0 !important;
-            border: none !important;
-          }
-
-          /* Ensure text is readable in PDF */
-          * {
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-          }
-
-          /* Hide loading spinners */
-          .MuiCircularProgress-root {
-            display: none !important;
-          }
-        `
-      });
-
-      // Generate PDF
-      console.log('Generating PDF...');
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '15mm',
-          bottom: '20mm',
-          left: '15mm'
-        },
-        preferCSSPageSize: true
-      });
-
-      console.log('PDF generated successfully');
-
+      // Set response headers
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
-      res.send(pdf);
 
-    } finally {
-      if (browser) {
-        await browser.close();
+      // Pipe the PDF to the response
+      doc.pipe(res);
+
+      // Add title
+      doc.fontSize(20)
+         .font('Helvetica-Bold')
+         .text('E-Invoicing Readiness Report', { align: 'center' });
+
+      doc.moveDown();
+
+      // Add report metadata
+      doc.fontSize(12)
+         .font('Helvetica')
+         .text(`Report ID: ${reportId}`)
+         .text(`Generated: ${new Date().toLocaleString()}`)
+         .text(`Original File: ${report.originalFileName || 'Unknown'}`);
+
+      doc.moveDown(2);
+
+      // Add scores section
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('Summary Scores');
+
+      doc.fontSize(12)
+         .font('Helvetica')
+         .text(`Readiness Score: ${report.readinessScore || 0}`)
+         .text(`Field Coverage: ${report.fieldCoverage || 0}%`)
+         .text(`Rules Passed: ${report.rulesPassed || 0}/${report.totalRules || 0}`);
+
+      doc.moveDown(2);
+
+      // Add validation rules section
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('Validation Rules');
+
+      doc.moveDown();
+
+      if (report.ruleFindings && report.ruleFindings.length > 0) {
+        report.ruleFindings.forEach((rule, index) => {
+          const status = rule.passed ? 'PASSED' : 'FAILED';
+          const statusColor = rule.passed ? 'green' : 'red';
+          
+          doc.fontSize(12)
+             .font('Helvetica-Bold')
+             .fillColor('black')
+             .text(`${index + 1}. ${rule.ruleId || 'Unknown Rule'}: ${rule.description || 'No description'}`);
+          
+          doc.font('Helvetica')
+             .fillColor(statusColor)
+             .text(`Status: ${status}`);
+
+          if (rule.issues && rule.issues.length > 0) {
+            doc.fillColor('black')
+               .text('Issues:');
+            rule.issues.forEach(issue => {
+              doc.text(`  • ${issue}`);
+            });
+          }
+          
+          doc.moveDown();
+        });
+      } else {
+        doc.text('No validation rules found.');
       }
-    }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
-    res.send(pdf);
+      doc.moveDown();
 
-  } catch (error) {
-    console.error('PDF generation error:', error);
+      // Add field coverage section
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .fillColor('black')
+         .text(`Field Coverage (${(report.mappedFields || []).length}/${report.totalRequiredFields || 0})`);
 
-    // Fallback: Try to generate PDF from report data directly
-    try {
-      console.log('Attempting fallback PDF generation...');
+      doc.moveDown();
 
-      if (!report) {
-        throw new Error('Report data not available for fallback PDF generation');
+      if (report.mappedFields && report.mappedFields.length > 0) {
+        report.mappedFields.forEach((field, index) => {
+          doc.fontSize(12)
+             .font('Helvetica')
+             .text(`${index + 1}. ${field.getsField || 'Unknown Field'}`);
+          
+          if (field.sourceField) {
+            doc.text(`   Mapped from: ${field.sourceField}`);
+          }
+          
+          if (field.sampleValue) {
+            doc.text(`   Sample: ${field.sampleValue}`);
+          }
+          
+          doc.moveDown(0.5);
+        });
+      } else {
+        doc.text('No mapped fields found.');
       }
 
-      const puppeteer = require('puppeteer');
-      const browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
+      doc.moveDown();
 
-      const page = await browser.newPage();
+      // Add AI insights section if available
+      if (report.aiInsights) {
+        doc.fontSize(16)
+           .font('Helvetica-Bold')
+           .text('AI Insights & Recommendations');
 
-      // Create a simple HTML representation of the report
-      const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <meta charset="UTF-8">
-          <title>Invoice Analysis Report - ${reportId}</title>
-          <style>
-              body {
-                  font-family: 'Segoe UI', Arial, sans-serif;
-                  margin: 20px;
-                  color: #333;
-                  line-height: 1.6;
-              }
-              .header {
-                  text-align: center;
-                  border-bottom: 2px solid #1976d2;
-                  padding-bottom: 20px;
-                  margin-bottom: 30px;
-              }
-              .score-grid {
-                  display: grid;
-                  grid-template-columns: repeat(3, 1fr);
-                  gap: 20px;
-                  margin: 30px 0;
-              }
-              .score-card {
-                  text-align: center;
-                  padding: 20px;
-                  background: #f8f9fa;
-                  border-radius: 8px;
-              }
-              .score-value {
-                  font-size: 2.5em;
-                  font-weight: bold;
-                  color: #1976d2;
-                  margin-bottom: 10px;
-              }
-              .section {
-                  margin: 30px 0;
-              }
-              .section h2 {
-                  color: #1976d2;
-                  border-bottom: 1px solid #ddd;
-                  padding-bottom: 10px;
-              }
-              .rule-item {
-                  padding: 15px;
-                  margin: 10px 0;
-                  border-left: 4px solid #ddd;
-                  background: #fafafa;
-              }
-              .rule-passed {
-                  border-left-color: #4caf50;
-                  background: #f1f8e9;
-              }
-              .rule-failed {
-                  border-left-color: #f44336;
-                  background: #ffebee;
-              }
-              .field-item {
-                  padding: 10px;
-                  margin: 5px 0;
-                  background: #e3f2fd;
-                  border-left: 4px solid #2196f3;
-              }
-              .metadata {
-                  background: #f5f5f5;
-                  padding: 20px;
-                  border-radius: 8px;
-                  margin-top: 30px;
-              }
-          </style>
-      </head>
-      <body>
-          <div class="header">
-              <h1>E-Invoicing Readiness Report</h1>
-              <p><strong>Report ID:</strong> ${reportId}</p>
-              <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-          </div>
+        doc.moveDown();
 
-          <div class="score-grid">
-              <div class="score-card">
-                  <div class="score-value">${report.readinessScore || 0}</div>
-                  <div>Readiness Score</div>
-              </div>
-              <div class="score-card">
-                  <div class="score-value">${report.fieldCoverage || 0}%</div>
-                  <div>Field Coverage</div>
-              </div>
-              <div class="score-card">
-                  <div class="score-value">${report.rulesPassed || 0}/${report.totalRules || 0}</div>
-                  <div>Rules Passed</div>
-              </div>
-          </div>
-
-          <div class="section">
-              <h2>Validation Rules</h2>
-              ${(report.ruleFindings || []).map(rule => `
-                  <div class="rule-item ${rule.passed ? 'rule-passed' : 'rule-failed'}">
-                      <strong>${rule.ruleId || 'Unknown Rule'}:</strong> ${rule.description || 'No description'}
-                      <br><em>Status: ${rule.passed ? 'PASSED' : 'FAILED'}</em>
-                      ${rule.issues && rule.issues.length > 0 ? `
-                          <br><strong>Issues:</strong><br>
-                          ${rule.issues.map(issue => `• ${issue}`).join('<br>')}
-                      ` : ''}
-                  </div>
-              `).join('')}
-          </div>
-
-          <div class="section">
-              <h2>Field Coverage (${(report.mappedFields || []).length}/${report.totalRequiredFields || 0})</h2>
-              ${(report.mappedFields || []).map(field => `
-                  <div class="field-item">
-                      <strong>${field.getsField || 'Unknown Field'}</strong>
-                      ${field.sourceField ? ` ← ${field.sourceField}` : ' (Not mapped)'}
-                      ${field.sampleValue ? `<br><em>Sample: ${field.sampleValue}</em>` : ''}
-                  </div>
-              `).join('')}
-          </div>
-
-          ${report.aiInsights ? `
-              <div class="section">
-                  <h2>AI Insights & Recommendations</h2>
-                  <p><strong>Overall Assessment:</strong> ${report.aiInsights.overallAssessment || 'No assessment available'}</p>
-
-                  ${report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0 ? `
-                      <h3>Priority Issues:</h3>
-                      ${report.aiInsights.priorityIssues.map(issue => `<p>• ${typeof issue === 'string' ? issue : JSON.stringify(issue)}</p>`).join('')}
-                  ` : ''}
-
-                  ${report.aiInsights.nextSteps && report.aiInsights.nextSteps.length > 0 ? `
-                      <h3>Next Steps:</h3>
-                      ${report.aiInsights.nextSteps.map(step => `<p>• ${typeof step === 'string' ? step : JSON.stringify(step)}</p>`).join('')}
-                  ` : ''}
-              </div>
-          ` : ''}
-
-          <div class="metadata">
-              <h2>Report Metadata</h2>
-              <p><strong>Original File:</strong> ${report.originalFileName || 'Unknown'}</p>
-              <p><strong>File Size:</strong> ${report.fileSize ? (report.fileSize / 1024).toFixed(2) + ' KB' : 'Unknown'}</p>
-              <p><strong>Records Processed:</strong> ${report.recordCount || 'Unknown'}</p>
-              <p><strong>Analysis Duration:</strong> ${report.processingTime || 'Unknown'}</p>
-          </div>
-      </body>
-      </html>`;
-
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '20mm',
-          right: '15mm',
-          bottom: '20mm',
-          left: '15mm'
+        if (report.aiInsights.overallAssessment) {
+          doc.fontSize(12)
+             .font('Helvetica-Bold')
+             .text('Overall Assessment:');
+          doc.font('Helvetica')
+             .text(report.aiInsights.overallAssessment);
+          doc.moveDown();
         }
-      });
 
-      await browser.close();
+        if (report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0) {
+          doc.font('Helvetica-Bold')
+             .text('Priority Issues:');
+          doc.font('Helvetica');
+          report.aiInsights.priorityIssues.forEach(issue => {
+            const issueText = typeof issue === 'string' ? issue : JSON.stringify(issue);
+            doc.text(`• ${issueText}`);
+          });
+          doc.moveDown();
+        }
 
-      console.log('Fallback PDF generated successfully');
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
-      res.send(pdf);
+        if (report.aiInsights.nextSteps && report.aiInsights.nextSteps.length > 0) {
+          doc.font('Helvetica-Bold')
+             .text('Next Steps:');
+          doc.font('Helvetica');
+          report.aiInsights.nextSteps.forEach(step => {
+            const stepText = typeof step === 'string' ? step : JSON.stringify(step);
+            doc.text(`• ${stepText}`);
+          });
+          doc.moveDown();
+        }
+      }
 
-    } catch (fallbackError) {
-      console.error('Fallback PDF generation also failed:', fallbackError);
+      // Add metadata section
+      doc.addPage();
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('Report Metadata');
+
+      doc.moveDown();
+
+      doc.fontSize(12)
+         .font('Helvetica')
+         .text(`File Size: ${report.fileSize ? (report.fileSize / 1024).toFixed(2) + ' KB' : 'Unknown'}`)
+         .text(`Records Processed: ${report.recordCount || 'Unknown'}`)
+         .text(`Analysis Duration: ${report.processingTime || 'Unknown'}`);
+
+      // Finalize the PDF
+      doc.end();
+
+      console.log('PDF generated successfully with PDFKit');
+
+    } catch (error) {
+      console.error('PDF generation error:', error);
       res.status(500).json({
         error: error.message,
         details: 'Failed to generate PDF report',
-        fallbackError: fallbackError.message,
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    res.status(500).json({
+      error: error.message,
+      details: 'Failed to generate PDF report',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
-});// GET /reports - Get recent reports (P1 feature)
+});
+
+// GET /reports - Get recent reports (P1 feature)
 router.get('/reports', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 reports
