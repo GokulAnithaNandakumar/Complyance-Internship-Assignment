@@ -8,9 +8,8 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://complyance-internship-assignment.vercel.app/api",
-      "type": "string",
-      "description": "Base URL for the unified API under /api"
+      "value": "https://complyance-internship-assignment-zk.vercel.app",
+      "type": "string"
     },
     {
       "key": "uploadId",
@@ -334,12 +333,12 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/share/{{reportId}}",
+          "raw": "{{baseUrl}}/report/{{reportId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
-            "share",
+            "report",
             "{{reportId}}"
           ]
         },

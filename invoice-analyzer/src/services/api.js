@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://complyance-internship-assignment-zk.vercel.app';
+// Use relative path for API calls - will be proxied in development and work in production
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -56,14 +57,30 @@ export const apiService = {
     });
   },
 
-  // Get report by ID
+  // Get report by ID - updated to use /share endpoint
   getReport: async (reportId) => {
-    return api.get(`/report/${reportId}`);
+    return api.get(`/share/${reportId}`);
+  },
+
+  // Download PDF report
+  downloadPDF: async (reportId) => {
+    return api.get(`/share/${reportId}/pdf`, {
+      responseType: 'blob',
+    });
   },
 
   // Get recent reports
   getRecentReports: async (limit = 10) => {
     return api.get(`/reports?limit=${limit}`);
+  },
+
+  // Get AI insights
+  getAiInsights: async (reportData, ruleFindings, coverage) => {
+    return api.post('/ai-insights', {
+      reportData,
+      ruleFindings,
+      coverage,
+    });
   },
 
   // Health check
