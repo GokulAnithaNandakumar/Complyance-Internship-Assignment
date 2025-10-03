@@ -53,7 +53,7 @@ const RecentReports = () => {
     }, []);
 
     const handleOpenReport = (reportId) => {
-        window.open(`/share/${reportId}`, '_blank');
+        navigate(`/share/${reportId}`);
     };
 
     if (loading) {
@@ -121,37 +121,39 @@ const RecentReports = () => {
                             </TableHead>
                             <TableBody>
                                 {reports.map((report) => {
-                                    const readiness = getReadinessLevel(report.overallScore);
-                                    // console.log(readiness);
+                                    const reportId = report.reportId || report.id;
+                                    const readiness = getReadinessLevel(report.scores_overall || report.overallScore || 0);
+
                                     return (
-                                        <TableRow key={report.reportId || report.id || Math.random()} hover>
+                                        <TableRow key={reportId || Math.random()} hover>
                                             <TableCell>
                                                 <Typography variant="body2" fontFamily="monospace">
-                                                    {(report.reportId || report.id || 'N/A').substring(0, 8)}...
+                                                    {(reportId || 'N/A').substring(0, 8)}...
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">
-                                                    {formatDate(report.createdAt)}
+                                                    {formatDate(report.created_at || report.createdAt)}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell align="center">
                                                 <Typography variant="h6" fontWeight="bold">
-                                                    {report.overallScore || 0}%
+                                                    {report.scores_overall || report.overallScore || 0}%
                                                 </Typography>
                                             </TableCell>
                                             <TableCell align="center">
                                                 <Chip
-                                                    label={readiness.label}
-                                                    color={readiness.color}
+                                                    label={readiness.label || readiness}
+                                                    color={readiness.color || 'default'}
                                                     size="small"
                                                 />
                                             </TableCell>
                                             <TableCell align="center">
                                                 <IconButton
                                                     size="small"
-                                                    onClick={() => handleOpenReport(report.reportId)}
+                                                    onClick={() => handleOpenReport(reportId)}
                                                     title="Open report"
+                                                    disabled={!reportId}
                                                 >
                                                     <OpenInNew />
                                                 </IconButton>

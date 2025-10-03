@@ -303,7 +303,7 @@ router.get('/report/:reportId', async (req, res) => {
 
     // Return the raw report JSON as specified in PRD
     res.json(report);
-    
+
   } catch (error) {
     console.error('Report retrieval error:', error);
     res.status(500).json({
@@ -636,11 +636,11 @@ router.get('/share/:reportId/pdf', async (req, res) => {
             }
 
             // Mapping suggestion
-            const mappingText = typeof suggestion === 'object' ? 
+            const mappingText = typeof suggestion === 'object' ?
               (suggestion.mapping || suggestion.field || `Mapping ${index + 1}`) : suggestion;
-            const rationaleText = typeof suggestion === 'object' ? 
+            const rationaleText = typeof suggestion === 'object' ?
               (suggestion.rationale || suggestion.description || '') : '';
-            const priorityText = typeof suggestion === 'object' ? 
+            const priorityText = typeof suggestion === 'object' ?
               (suggestion.priority || 'Medium') : 'Medium';
 
             doc.fontSize(11).fillColor('#2196f3').text(`${mappingText}`, 40, y, { width: pageWidth });
@@ -652,7 +652,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
             }
 
             // Priority indicator
-            const priorityColor = priorityText.toLowerCase() === 'high' ? '#f44336' : 
+            const priorityColor = priorityText.toLowerCase() === 'high' ? '#f44336' :
                                 priorityText.toLowerCase() === 'medium' ? '#ff9800' : '#4caf50';
             doc.fontSize(9).fillColor(priorityColor).text(`Priority: ${priorityText}`, 40, y, { width: pageWidth });
             y += 20;

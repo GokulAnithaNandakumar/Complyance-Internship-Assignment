@@ -18,7 +18,7 @@ class EmailService {
     try {
       const shareUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/share/${reportId}`;
       const pdfUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/share/${reportId}/pdf`;
-      
+
       const overallScore = reportData.scores?.overall || 0;
       const readinessLevel = this.getReadinessLevel(overallScore);
 
@@ -30,7 +30,7 @@ class EmailService {
       };
 
       const result = await this.resend.emails.send(emailData);
-      
+
       return {
         success: true,
         messageId: result.data?.id,
@@ -47,7 +47,7 @@ class EmailService {
     const overallScore = reportData.scores?.overall || 0;
     const readinessLevel = this.getReadinessLevel(overallScore);
     const readinessColor = this.getReadinessColor(overallScore);
-    
+
     const createdDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -67,11 +67,11 @@ class EmailService {
         <h1 style="margin: 0; font-size: 24px;">E-Invoicing Readiness Report</h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">Your invoice analysis is complete</p>
     </div>
-    
+
     <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef;">
         <div style="background: white; padding: 25px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;">
             <h2 style="margin: 0 0 15px 0; color: #2c3e50;">Report Summary</h2>
-            
+
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 15px 0;">
                 <span style="font-weight: bold;">Overall Readiness:</span>
                 <div style="display: flex; align-items: center;">
@@ -81,17 +81,17 @@ class EmailService {
                     <span style="font-size: 18px; font-weight: bold; color: ${readinessColor};">${overallScore}%</span>
                 </div>
             </div>
-            
+
             <div style="margin: 15px 0;">
                 <span style="font-weight: bold;">Report ID:</span>
                 <code style="background: #f1f3f4; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">${reportId}</code>
             </div>
-            
+
             <div style="margin: 15px 0;">
                 <span style="font-weight: bold;">Generated:</span>
                 <span style="margin-left: 8px;">${createdDate}</span>
             </div>
-            
+
             ${reportData.scores ? `
             <div style="margin: 20px 0;">
                 <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px;">Score Breakdown</h3>
@@ -104,7 +104,7 @@ class EmailService {
             </div>
             ` : ''}
         </div>
-        
+
         <div style="text-align: center; margin: 25px 0;">
             <a href="${shareUrl}" style="display: inline-block; background: #007bff; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 0;">
                 📋 View Full Report
@@ -113,14 +113,14 @@ class EmailService {
                 📄 Download PDF
             </a>
         </div>
-        
+
         <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border-left: 4px solid #2196f3;">
             <h3 style="margin: 0 0 8px 0; color: #1976d2; font-size: 14px;">📝 Next Steps</h3>
             <p style="margin: 0; font-size: 14px; color: #1565c0;">
                 Review your detailed analysis report to understand field mappings, rule compliance, and recommendations for improving your e-invoicing readiness.
             </p>
         </div>
-        
+
         <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6; text-align: center; color: #6c757d; font-size: 12px;">
             <p style="margin: 0;">This report will be available for 7 days from generation date.</p>
             <p style="margin: 5px 0 0 0;">

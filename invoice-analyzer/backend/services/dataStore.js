@@ -14,29 +14,29 @@ class DataStore {
       timestamp: Date.now(),
       expiresAt: Date.now() + this.maxAge
     };
-    
+
     this.memoryStore.set(uploadId, record);
-    
+
     // Clean up expired entries
     this.cleanup();
-    
+
     return true;
   }
 
   // Retrieve stored data
   async getData(uploadId) {
     const record = this.memoryStore.get(uploadId);
-    
+
     if (!record) {
       return null;
     }
-    
+
     // Check if expired
     if (Date.now() > record.expiresAt) {
       this.memoryStore.delete(uploadId);
       return null;
     }
-    
+
     return {
       data: record.data,
       metadata: record.metadata
@@ -58,7 +58,7 @@ class DataStore {
     try {
       // Create a clean copy of the report for JSON serialization
       const cleanReport = JSON.parse(JSON.stringify(report));
-      
+
       const query = `
         INSERT INTO reports (id, upload_id, created_at, scores_overall, report_json, expires_at)
         VALUES ($1, $2, $3, $4, $5, $6)
@@ -67,7 +67,7 @@ class DataStore {
           scores_overall = EXCLUDED.scores_overall
         RETURNING id
       `;
-      
+
       const values = [
         cleanReport.reportId,
         cleanReport.uploadId || null,
@@ -76,7 +76,7 @@ class DataStore {
         JSON.stringify(cleanReport),
         new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)) // 7 days from now
       ];
-      
+
       const result = await pool.query(query, values);
       console.log('Report saved to database successfully:', result.rows[0].id);
       return result.rows[0];
@@ -98,27 +98,27 @@ class DataStore {
     try {
       const query = 'SELECT report_json FROM reports WHERE id = $1 AND expires_at > NOW()';
       const result = await pool.query(query, [reportId]);
-      
+
       if (result.rows.length > 0) {
         return JSON.parse(result.rows[0].report_json);
       }
-      
+
       // Fallback to memory storage
       const memoryRecord = this.memoryStore.get(reportId);
       if (memoryRecord && Date.now() <= memoryRecord.expiresAt) {
         return memoryRecord.data;
       }
-      
+
       return null;
     } catch (error) {
       console.error('Database retrieval error:', error);
-      
+
       // Fallback to memory storage
       const memoryRecord = this.memoryStore.get(reportId);
       if (memoryRecord && Date.now() <= memoryRecord.expiresAt) {
         return memoryRecord.data;
       }
-      
+
       return null;
     }
   }
@@ -127,19 +127,19 @@ class DataStore {
   async getRecentReports(limit = 10) {
     try {
       const query = `
-        SELECT id, created_at, scores_overall, 
+        SELECT id, created_at, scores_overall,
                report_json->>'meta' as meta_json
-        FROM reports 
+        FROM reports
         WHERE expires_at > NOW()
-        ORDER BY created_at DESC 
+        ORDER BY created_at DESC
         LIMIT $1
       `;
-      
+
       const result = await pool.query(query, [limit]);
       return result.rows.map(row => {
         let country = null;
         let erp = null;
-        
+
         try {
           const meta = JSON.parse(row.meta_json || '{}');
           country = meta.country;
@@ -147,7 +147,7 @@ class DataStore {
         } catch (e) {
           // Ignore parse errors
         }
-        
+
         return {
           id: row.id,
           created_at: row.created_at,
@@ -158,7 +158,7 @@ class DataStore {
       });
     } catch (error) {
       console.error('Database query error:', error);
-      
+
       // Fallback to memory storage
       const reports = [];
       for (const [id, record] of this.memoryStore.entries()) {
@@ -172,7 +172,7 @@ class DataStore {
           });
         }
       }
-      
+
       return reports.sort((a, b) => b.created_at - a.created_at).slice(0, limit);
     }
   }

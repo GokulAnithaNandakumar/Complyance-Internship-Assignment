@@ -958,8 +958,8 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
             </Box>
 
             {/* Email Dialog */}
-            <Dialog 
-                open={emailDialog} 
+            <Dialog
+                open={emailDialog}
                 onClose={() => setEmailDialog(false)}
                 maxWidth="sm"
                 fullWidth
@@ -987,13 +987,13 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button 
+                    <Button
                         onClick={() => setEmailDialog(false)}
                         disabled={emailSending}
                     >
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         onClick={sendEmailReport}
                         variant="contained"
                         disabled={!emailAddress || emailSending}

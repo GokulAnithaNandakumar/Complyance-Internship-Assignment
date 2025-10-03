@@ -3,7 +3,7 @@ const { pool } = require('./config/database');
 async function initializeDatabase() {
   try {
     console.log('Initializing database...');
-    
+
     // Create reports table if it doesn't exist
     const createReportsTable = `
       CREATE TABLE IF NOT EXISTS reports (
@@ -15,24 +15,24 @@ async function initializeDatabase() {
         expires_at TIMESTAMP NOT NULL
       );
     `;
-    
+
     await pool.query(createReportsTable);
     console.log('Reports table created/verified');
-    
+
     // Create index on expires_at for efficient cleanup
     const createIndex = `
-      CREATE INDEX IF NOT EXISTS idx_reports_expires_at 
+      CREATE INDEX IF NOT EXISTS idx_reports_expires_at
       ON reports (expires_at);
     `;
-    
+
     await pool.query(createIndex);
     console.log('Database indexes created/verified');
-    
+
     // Test connection
     const testQuery = 'SELECT COUNT(*) as count FROM reports';
     const result = await pool.query(testQuery);
     console.log(`Database initialized successfully. Found ${result.rows[0].count} existing reports.`);
-    
+
   } catch (error) {
     console.error('Database initialization error:', error);
     console.log('Falling back to memory storage only.');

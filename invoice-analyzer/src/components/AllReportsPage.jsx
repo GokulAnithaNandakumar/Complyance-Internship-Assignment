@@ -56,7 +56,7 @@ const AllReportsPage = () => {
     const [emailAddress, setEmailAddress] = useState('');
     const [emailSending, setEmailSending] = useState(false);
     const [emailSuccess, setEmailSuccess] = useState(null);
-    
+
     const reportsPerPage = 20;
 
     const fetchReports = async (pageNum = 1) => {
@@ -156,10 +156,10 @@ const AllReportsPage = () => {
 
     if (loading) {
         return (
-            <Box 
-                display="flex" 
-                justifyContent="center" 
-                alignItems="center" 
+            <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
                 minHeight="100vh"
                 flexDirection="column"
             >
@@ -176,9 +176,9 @@ const AllReportsPage = () => {
             {/* App Bar */}
             <AppBar position="sticky" sx={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}>
                 <Toolbar>
-                    <IconButton 
-                        edge="start" 
-                        color="inherit" 
+                    <IconButton
+                        edge="start"
+                        color="inherit"
                         onClick={() => navigate('/')}
                         sx={{ mr: 2 }}
                     >
@@ -199,7 +199,7 @@ const AllReportsPage = () => {
             <Container maxWidth="xl" sx={{ py: 4 }}>
                 {/* Header Stats */}
                 <Grid container spacing={3} sx={{ mb: 4 }}>
-                    <Grid item xs={12} md={3}>
+                    <Grid size={{ xs: 12, md: 3 }}>
                         <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="primary">
@@ -211,7 +211,7 @@ const AllReportsPage = () => {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} md={3}>
+                    <Grid size={{ xs: 12, md: 3 }}>
                         <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="success.main">
@@ -223,7 +223,7 @@ const AllReportsPage = () => {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} md={3}>
+                    <Grid size={{ xs: 12, md: 3 }}>
                         <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="warning.main">
@@ -238,7 +238,7 @@ const AllReportsPage = () => {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} md={3}>
+                    <Grid size={{ xs: 12, md: 3 }}>
                         <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="error.main">
@@ -286,8 +286,8 @@ const AllReportsPage = () => {
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                                     Complete an analysis to see reports here.
                                 </Typography>
-                                <Button 
-                                    variant="contained" 
+                                <Button
+                                    variant="contained"
                                     startIcon={<Home />}
                                     onClick={() => navigate('/')}
                                 >
@@ -312,7 +312,7 @@ const AllReportsPage = () => {
                                                 const reportId = report.reportId || report.id;
                                                 const score = report.scores_overall || report.overallScore || 0;
                                                 const readiness = getReadinessLevel(score);
-                                                
+
                                                 return (
                                                     <TableRow key={reportId} hover>
                                                         <TableCell>
@@ -335,7 +335,7 @@ const AllReportsPage = () => {
                                                         </TableCell>
                                                         <TableCell align="center">
                                                             <Chip
-                                                                label={readiness}
+                                                                label={readiness.label || readiness}
                                                                 color={getScoreColor(score)}
                                                                 variant="outlined"
                                                                 size="small"
@@ -344,8 +344,8 @@ const AllReportsPage = () => {
                                                         <TableCell align="center">
                                                             <Box display="flex" justifyContent="center" gap={0.5}>
                                                                 <Tooltip title="View Report">
-                                                                    <IconButton 
-                                                                        size="small" 
+                                                                    <IconButton
+                                                                        size="small"
                                                                         onClick={() => viewReport(reportId)}
                                                                         color="primary"
                                                                     >
@@ -353,8 +353,8 @@ const AllReportsPage = () => {
                                                                     </IconButton>
                                                                 </Tooltip>
                                                                 <Tooltip title="Download PDF">
-                                                                    <IconButton 
-                                                                        size="small" 
+                                                                    <IconButton
+                                                                        size="small"
                                                                         onClick={() => downloadPDF(reportId)}
                                                                         color="success"
                                                                     >
@@ -362,8 +362,8 @@ const AllReportsPage = () => {
                                                                     </IconButton>
                                                                 </Tooltip>
                                                                 <Tooltip title="Email Report">
-                                                                    <IconButton 
-                                                                        size="small" 
+                                                                    <IconButton
+                                                                        size="small"
                                                                         onClick={() => handleEmailReport(reportId)}
                                                                         color="info"
                                                                     >
@@ -371,8 +371,8 @@ const AllReportsPage = () => {
                                                                     </IconButton>
                                                                 </Tooltip>
                                                                 <Tooltip title="Share">
-                                                                    <IconButton 
-                                                                        size="small" 
+                                                                    <IconButton
+                                                                        size="small"
                                                                         onClick={() => shareReport(reportId)}
                                                                         color="secondary"
                                                                     >
@@ -406,8 +406,8 @@ const AllReportsPage = () => {
             </Container>
 
             {/* Email Dialog */}
-            <Dialog 
-                open={emailDialog.open} 
+            <Dialog
+                open={emailDialog.open}
                 onClose={() => setEmailDialog({ open: false, reportId: null })}
                 maxWidth="sm"
                 fullWidth
@@ -434,8 +434,8 @@ const AllReportsPage = () => {
                         disabled={emailSending}
                     />
                     {emailSuccess && (
-                        <Alert 
-                            severity={emailSuccess.includes('successfully') ? 'success' : 'error'} 
+                        <Alert
+                            severity={emailSuccess.includes('successfully') ? 'success' : 'error'}
                             sx={{ mt: 2 }}
                         >
                             {emailSuccess}
@@ -443,13 +443,13 @@ const AllReportsPage = () => {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button 
+                    <Button
                         onClick={() => setEmailDialog({ open: false, reportId: null })}
                         disabled={emailSending}
                     >
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         onClick={sendEmailReport}
                         variant="contained"
                         disabled={!emailAddress || emailSending}

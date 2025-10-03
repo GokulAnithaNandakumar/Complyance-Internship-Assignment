@@ -39,8 +39,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/upload",
-              "host": ["{{baseUrl}}"],
-              "path": ["upload"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload"
+              ]
             },
             "description": "Upload invoice data file for analysis. Supports CSV and JSON formats up to 5MB. Only first 200 rows are processed for performance."
           },
@@ -62,8 +66,12 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/upload",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["upload"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "upload"
+                  ]
                 }
               },
               "status": "OK",
@@ -101,8 +109,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/upload",
-              "host": ["{{baseUrl}}"],
-              "path": ["upload"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload"
+              ]
             },
             "description": "Alternative upload method using JSON body with text content instead of file upload."
           }
@@ -133,8 +145,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/analyze",
-              "host": ["{{baseUrl}}"],
-              "path": ["analyze"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analyze"
+              ]
             },
             "description": "Analyze uploaded data against GETS v0.1 schema. Performs field mapping, rule validation, scoring, and generates AI insights."
           },
@@ -160,8 +176,12 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/analyze",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["analyze"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "analyze"
+                  ]
                 }
               },
               "status": "OK",
@@ -199,8 +219,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ai-insights",
-              "host": ["{{baseUrl}}"],
-              "path": ["ai-insights"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai-insights"
+              ]
             },
             "description": "Generate detailed AI insights for an existing report using Gemini API."
           }
@@ -217,8 +241,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/report/{{reportId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["report", "{{reportId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report",
+                "{{reportId}}"
+              ]
             },
             "description": "Get raw report JSON data. This is the required endpoint as specified in the PRD API contract."
           },
@@ -230,8 +259,13 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/report/{{reportId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["report", "{{reportId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "report",
+                    "{{reportId}}"
+                  ]
                 }
               },
               "status": "OK",
@@ -255,8 +289,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/share/{{reportId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["share", "{{reportId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "share",
+                "{{reportId}}"
+              ]
             },
             "description": "Get shareable HTML page for a report. This is the public view of the analysis results."
           }
@@ -268,8 +307,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/share/{{reportId}}/pdf",
-              "host": ["{{baseUrl}}"],
-              "path": ["share", "{{reportId}}", "pdf"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "share",
+                "{{reportId}}",
+                "pdf"
+              ]
             },
             "description": "Download PDF version of the analysis report with comprehensive formatting."
           }
@@ -295,8 +340,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/share/{{reportId}}/email",
-              "host": ["{{baseUrl}}"],
-              "path": ["share", "{{reportId}}", "email"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "share",
+                "{{reportId}}",
+                "email"
+              ]
             },
             "description": "Send report link via email using Resend service. Includes both web view and PDF download links."
           },
@@ -322,8 +373,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/share/{{reportId}}/email",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["share", "{{reportId}}", "email"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "share",
+                    "{{reportId}}",
+                    "email"
+                  ]
                 }
               },
               "status": "OK",
@@ -347,8 +404,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/reports?limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["reports"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -372,8 +433,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Check system health including database connectivity and service status."
           },
@@ -385,8 +450,12 @@
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/health",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["health"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ]
                 }
               },
               "status": "OK",
