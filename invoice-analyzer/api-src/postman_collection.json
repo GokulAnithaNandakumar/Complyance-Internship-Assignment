@@ -1,0 +1,529 @@
+{
+  "info": {
+    "name": "E-Invoicing Readiness Analyzer API",
+    "description": "Complete API testing collection for the E-Invoicing Readiness Analyzer backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://complyance-internship-assignment-zk.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "uploadId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": "Check API and database health status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has status field', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('status');",
+              "    pm.expect(jsonData.status).to.eql('healthy');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload Clean JSON File",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "sample_clean.json",
+              "description": "Upload the clean sample JSON file"
+            },
+            {
+              "key": "country",
+              "value": "AE",
+              "type": "text"
+            },
+            {
+              "key": "erp",
+              "value": "SAP",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/upload",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "upload"
+          ]
+        },
+        "description": "Upload the clean sample JSON file for testing"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has uploadId', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('uploadId');",
+              "    pm.collectionVariables.set('uploadId', jsonData.uploadId);",
+              "});",
+              "",
+              "pm.test('Response has metadata', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('metadata');",
+              "    pm.expect(jsonData.metadata).to.have.property('fileType');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload Flawed CSV File",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "sample_flawed.csv",
+              "description": "Upload the flawed sample CSV file"
+            },
+            {
+              "key": "country",
+              "value": "AE",
+              "type": "text"
+            },
+            {
+              "key": "erp",
+              "value": "Oracle",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/upload",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "upload"
+          ]
+        },
+        "description": "Upload the flawed sample CSV file for testing validation rules"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has uploadId', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('uploadId');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload Text Data (JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"[{\\\"inv_id\\\": \\\"INV-TEST\\\", \\\"date\\\": \\\"2025-01-15\\\", \\\"currency\\\": \\\"AED\\\", \\\"seller_name\\\": \\\"Test Seller\\\", \\\"seller_trn\\\": \\\"123456789\\\", \\\"buyer_name\\\": \\\"Test Buyer\\\", \\\"buyer_trn\\\": \\\"987654321\\\", \\\"total_excl_vat\\\": 1000, \\\"vat_amount\\\": 50, \\\"total_incl_vat\\\": 1050}]\",\n  \"country\": \"AE\",\n  \"erp\": \"Custom\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/upload",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "upload"
+          ]
+        },
+        "description": "Upload JSON data as text string"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has uploadId', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('uploadId');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analyze Data - High Readiness",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"uploadId\": \"{{uploadId}}\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": true\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/analyze",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analyze"
+          ]
+        },
+        "description": "Analyze uploaded data with high readiness questionnaire responses"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has reportId', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('reportId');",
+              "    pm.collectionVariables.set('reportId', jsonData.reportId);",
+              "});",
+              "",
+              "pm.test('Response has scores', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('scores');",
+              "    pm.expect(jsonData.scores).to.have.property('overall');",
+              "});",
+              "",
+              "pm.test('Response has coverage', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('coverage');",
+              "});",
+              "",
+              "pm.test('Response has rules', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('rules');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analyze Data - Low Readiness",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"uploadId\": \"{{uploadId}}\",\n  \"questionnaire\": {\n    \"webhooks\": false,\n    \"sandbox_env\": false,\n    \"retries\": false\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/analyze",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analyze"
+          ]
+        },
+        "description": "Analyze uploaded data with low readiness questionnaire responses"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Posture score should be low', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.scores.breakdown.posture).to.be.below(30);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Report by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/report/{{reportId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "report",
+            "{{reportId}}"
+          ]
+        },
+        "description": "Retrieve a specific report by its ID"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is valid report', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('reportId');",
+              "    pm.expect(jsonData).to.have.property('scores');",
+              "    pm.expect(jsonData).to.have.property('coverage');",
+              "    pm.expect(jsonData).to.have.property('rules');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Recent Reports",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/reports?limit=5",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reports"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "Get list of recent reports"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has reports array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('reports');",
+              "    pm.expect(jsonData.reports).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Test - Invalid Upload ID",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"uploadId\": \"invalid_id\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": false\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/analyze",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analyze"
+          ]
+        },
+        "description": "Test error handling with invalid upload ID"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 500', function () {",
+              "    pm.response.to.have.status(500);",
+              "});",
+              "",
+              "pm.test('Response has error message', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('error');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Test - Missing Report ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/report/nonexistent_report_id",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "report",
+            "nonexistent_report_id"
+          ]
+        },
+        "description": "Test error handling with non-existent report ID"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 404', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test('Response has error message', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('error');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Root Endpoint",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        },
+        "description": "Get API information and available endpoints"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has API info', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('name');",
+              "    pm.expect(jsonData).to.have.property('version');",
+              "    pm.expect(jsonData).to.have.property('endpoints');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
