@@ -276,8 +276,8 @@ router.post('/analyze', async (req, res) => {
   }
 });
 
-// GET /report/:reportId - Retrieve saved report
-router.get('/report/:reportId', async (req, res) => {
+// GET /share/:reportId - Retrieve saved report for sharing
+router.get('/share/:reportId', async (req, res) => {
   try {
     const { reportId } = req.params;
 
@@ -308,7 +308,346 @@ router.get('/report/:reportId', async (req, res) => {
   }
 });
 
-// GET /reports - Get recent reports (P1 feature)
+// GET /share/:reportId/pdf - Export report as PDF
+router.get('/share/:reportId/pdf', async (req, res) => {
+  const { reportId } = req.params;
+
+  if (!reportId) {
+    return res.status(400).json({
+      error: 'Missing report ID',
+      message: 'Report ID is required'
+    });
+  }
+
+  let report;
+  try {
+    report = await reportService.getReport(reportId);
+
+    if (!report) {
+      return res.status(404).json({
+        error: 'Report not found',
+        message: 'The requested report was not found or has expired'
+      });
+    }
+
+    console.log('Generating PDF for report:', reportId);
+
+    // Generate PDF using Puppeteer by navigating to the frontend page
+    const puppeteer = require('puppeteer');
+    let browser;
+
+    try {
+      browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security']
+      });
+
+      const page = await browser.newPage();
+
+      // Set viewport for better rendering
+      await page.setViewport({ width: 1200, height: 800 });
+
+      // Navigate to the share page
+      const shareUrl = `https://complyance-internship-assignment.vercel.app/share/${reportId}`;
+      console.log('Navigating to:', shareUrl);
+
+      const response = await page.goto(shareUrl, {
+        waitUntil: 'networkidle0',
+        timeout: 30000
+      });
+
+      if (!response || !response.ok()) {
+        throw new Error(`Failed to load page: ${response ? response.status() : 'No response'}`);
+      }
+
+      console.log('Page loaded successfully');
+
+      // Wait for content to load with a more robust check
+      try {
+        await page.waitForFunction(() => {
+          const hasContent = document.querySelector('.MuiPaper-root') ||
+                           document.querySelector('[class*="MuiCard"]') ||
+                           document.querySelector('[class*="results"]');
+          console.log('Checking for content:', !!hasContent);
+          return hasContent;
+        }, { timeout: 15000 });
+        console.log('Content found on page');
+      } catch (waitError) {
+        console.log('Wait timeout, but continuing with PDF generation');
+      }
+
+      // Wait a bit more for any async data loading
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Hide navigation and non-essential elements for PDF
+      await page.addStyleTag({
+        content: `
+          /* Hide navigation */
+          .MuiAppBar-root { display: none !important; }
+
+          /* Hide buttons */
+          button { display: none !important; }
+
+          /* Better PDF styling */
+          body {
+            margin: 0 !important;
+            padding: 20px !important;
+            background: white !important;
+          }
+
+          .MuiContainer-root {
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          .MuiPaper-root {
+            box-shadow: none !important;
+            margin: 0 !important;
+            border: none !important;
+          }
+
+          /* Ensure text is readable in PDF */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+
+          /* Hide loading spinners */
+          .MuiCircularProgress-root {
+            display: none !important;
+          }
+        `
+      });
+
+      // Generate PDF
+      console.log('Generating PDF...');
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          right: '15mm',
+          bottom: '20mm',
+          left: '15mm'
+        },
+        preferCSSPageSize: true
+      });
+
+      console.log('PDF generated successfully');
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
+      res.send(pdf);
+
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
+    res.send(pdf);
+
+  } catch (error) {
+    console.error('PDF generation error:', error);
+
+    // Fallback: Try to generate PDF from report data directly
+    try {
+      console.log('Attempting fallback PDF generation...');
+
+      if (!report) {
+        throw new Error('Report data not available for fallback PDF generation');
+      }
+
+      const puppeteer = require('puppeteer');
+      const browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+
+      const page = await browser.newPage();
+
+      // Create a simple HTML representation of the report
+      const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="UTF-8">
+          <title>Invoice Analysis Report - ${reportId}</title>
+          <style>
+              body {
+                  font-family: 'Segoe UI', Arial, sans-serif;
+                  margin: 20px;
+                  color: #333;
+                  line-height: 1.6;
+              }
+              .header {
+                  text-align: center;
+                  border-bottom: 2px solid #1976d2;
+                  padding-bottom: 20px;
+                  margin-bottom: 30px;
+              }
+              .score-grid {
+                  display: grid;
+                  grid-template-columns: repeat(3, 1fr);
+                  gap: 20px;
+                  margin: 30px 0;
+              }
+              .score-card {
+                  text-align: center;
+                  padding: 20px;
+                  background: #f8f9fa;
+                  border-radius: 8px;
+              }
+              .score-value {
+                  font-size: 2.5em;
+                  font-weight: bold;
+                  color: #1976d2;
+                  margin-bottom: 10px;
+              }
+              .section {
+                  margin: 30px 0;
+              }
+              .section h2 {
+                  color: #1976d2;
+                  border-bottom: 1px solid #ddd;
+                  padding-bottom: 10px;
+              }
+              .rule-item {
+                  padding: 15px;
+                  margin: 10px 0;
+                  border-left: 4px solid #ddd;
+                  background: #fafafa;
+              }
+              .rule-passed {
+                  border-left-color: #4caf50;
+                  background: #f1f8e9;
+              }
+              .rule-failed {
+                  border-left-color: #f44336;
+                  background: #ffebee;
+              }
+              .field-item {
+                  padding: 10px;
+                  margin: 5px 0;
+                  background: #e3f2fd;
+                  border-left: 4px solid #2196f3;
+              }
+              .metadata {
+                  background: #f5f5f5;
+                  padding: 20px;
+                  border-radius: 8px;
+                  margin-top: 30px;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="header">
+              <h1>E-Invoicing Readiness Report</h1>
+              <p><strong>Report ID:</strong> ${reportId}</p>
+              <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+
+          <div class="score-grid">
+              <div class="score-card">
+                  <div class="score-value">${report.readinessScore || 0}</div>
+                  <div>Readiness Score</div>
+              </div>
+              <div class="score-card">
+                  <div class="score-value">${report.fieldCoverage || 0}%</div>
+                  <div>Field Coverage</div>
+              </div>
+              <div class="score-card">
+                  <div class="score-value">${report.rulesPassed || 0}/${report.totalRules || 0}</div>
+                  <div>Rules Passed</div>
+              </div>
+          </div>
+
+          <div class="section">
+              <h2>Validation Rules</h2>
+              ${(report.ruleFindings || []).map(rule => `
+                  <div class="rule-item ${rule.passed ? 'rule-passed' : 'rule-failed'}">
+                      <strong>${rule.ruleId || 'Unknown Rule'}:</strong> ${rule.description || 'No description'}
+                      <br><em>Status: ${rule.passed ? 'PASSED' : 'FAILED'}</em>
+                      ${rule.issues && rule.issues.length > 0 ? `
+                          <br><strong>Issues:</strong><br>
+                          ${rule.issues.map(issue => `• ${issue}`).join('<br>')}
+                      ` : ''}
+                  </div>
+              `).join('')}
+          </div>
+
+          <div class="section">
+              <h2>Field Coverage (${(report.mappedFields || []).length}/${report.totalRequiredFields || 0})</h2>
+              ${(report.mappedFields || []).map(field => `
+                  <div class="field-item">
+                      <strong>${field.getsField || 'Unknown Field'}</strong>
+                      ${field.sourceField ? ` ← ${field.sourceField}` : ' (Not mapped)'}
+                      ${field.sampleValue ? `<br><em>Sample: ${field.sampleValue}</em>` : ''}
+                  </div>
+              `).join('')}
+          </div>
+
+          ${report.aiInsights ? `
+              <div class="section">
+                  <h2>AI Insights & Recommendations</h2>
+                  <p><strong>Overall Assessment:</strong> ${report.aiInsights.overallAssessment || 'No assessment available'}</p>
+
+                  ${report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0 ? `
+                      <h3>Priority Issues:</h3>
+                      ${report.aiInsights.priorityIssues.map(issue => `<p>• ${typeof issue === 'string' ? issue : JSON.stringify(issue)}</p>`).join('')}
+                  ` : ''}
+
+                  ${report.aiInsights.nextSteps && report.aiInsights.nextSteps.length > 0 ? `
+                      <h3>Next Steps:</h3>
+                      ${report.aiInsights.nextSteps.map(step => `<p>• ${typeof step === 'string' ? step : JSON.stringify(step)}</p>`).join('')}
+                  ` : ''}
+              </div>
+          ` : ''}
+
+          <div class="metadata">
+              <h2>Report Metadata</h2>
+              <p><strong>Original File:</strong> ${report.originalFileName || 'Unknown'}</p>
+              <p><strong>File Size:</strong> ${report.fileSize ? (report.fileSize / 1024).toFixed(2) + ' KB' : 'Unknown'}</p>
+              <p><strong>Records Processed:</strong> ${report.recordCount || 'Unknown'}</p>
+              <p><strong>Analysis Duration:</strong> ${report.processingTime || 'Unknown'}</p>
+          </div>
+      </body>
+      </html>`;
+
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          right: '15mm',
+          bottom: '20mm',
+          left: '15mm'
+        }
+      });
+
+      await browser.close();
+
+      console.log('Fallback PDF generated successfully');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="invoice-analysis-${reportId}.pdf"`);
+      res.send(pdf);
+
+    } catch (fallbackError) {
+      console.error('Fallback PDF generation also failed:', fallbackError);
+      res.status(500).json({
+        error: error.message,
+        details: 'Failed to generate PDF report',
+        fallbackError: fallbackError.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  }
+});// GET /reports - Get recent reports (P1 feature)
 router.get('/reports', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 10, 50); // Max 50 reports

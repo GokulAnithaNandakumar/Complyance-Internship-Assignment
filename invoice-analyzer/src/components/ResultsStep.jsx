@@ -45,7 +45,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = 'https://complyance-internship-assignment-zk.vercel.app';
 
 const ScoreCard = ({ title, score, color, icon, description }) => (
     <Card variant="outlined" sx={{ height: '100%' }}>
@@ -388,7 +388,6 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [shareUrl, setShareUrl] = useState('');
-    const [htmlShareUrl, setHtmlShareUrl] = useState('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [aiInsights, setAiInsights] = useState(null);
@@ -413,11 +412,9 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
             });
 
             setReportData(response.data);
-            const newShareUrl = `${window.location.origin}/report/${response.data.reportId}`;
-            const newHtmlShareUrl = `${window.location.origin}/share/${response.data.reportId}`;
-            console.log('Analysis complete, setting shareUrl:', newShareUrl, 'htmlShareUrl:', newHtmlShareUrl, 'reportId:', response.data.reportId);
+            const newShareUrl = `${window.location.origin}/share/${response.data.reportId}`;
+            console.log('Analysis complete, setting shareUrl:', newShareUrl, 'reportId:', response.data.reportId);
             setShareUrl(newShareUrl);
-            setHtmlShareUrl(newHtmlShareUrl);
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to analyze data');
         } finally {
@@ -431,11 +428,9 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
         } else if (reportData && reportData.reportId) {
             // Set share URL if reportData exists but shareUrl is empty
             if (!shareUrl) {
-                const newShareUrl = `${window.location.origin}/report/${reportData.reportId}`;
-                const newHtmlShareUrl = `${window.location.origin}/share/${reportData.reportId}`;
-                console.log('Setting shareUrl:', newShareUrl, 'htmlShareUrl:', newHtmlShareUrl, 'origin:', window.location.origin, 'reportId:', reportData.reportId);
+                const newShareUrl = `${window.location.origin}/share/${reportData.reportId}`;
+                console.log('Setting shareUrl:', newShareUrl, 'origin:', window.location.origin, 'reportId:', reportData.reportId);
                 setShareUrl(newShareUrl);
-                setHtmlShareUrl(newHtmlShareUrl);
             }
         }
     }, [uploadData, reportData, analyzeData, shareUrl]);
@@ -479,6 +474,35 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
         linkElement.click();
     };
 
+    const downloadPdf = async () => {
+        if (!reportData || !reportData.reportId) {
+            setSnackbarMessage('Report not available for PDF export');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        try {
+            const response = await axios.get(`${API_BASE_URL}/share/${reportData.reportId}/pdf`, {
+                responseType: 'blob'
+            });
+
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const linkElement = document.createElement('a');
+            linkElement.href = url;
+            linkElement.download = `invoice-analysis-${reportData.reportId}.pdf`;
+            linkElement.click();
+            window.URL.revokeObjectURL(url);
+
+            setSnackbarMessage('PDF downloaded successfully!');
+            setSnackbarOpen(true);
+        } catch (err) {
+            console.error('PDF download error:', err);
+            setSnackbarMessage('Failed to download PDF');
+            setSnackbarOpen(true);
+        }
+    };
+
     const copyShareUrl = async () => {
         if (!shareUrl) {
             setSnackbarMessage('Share link not available yet');
@@ -498,13 +522,13 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
     };
 
     const openHtmlShare = () => {
-        if (!htmlShareUrl) {
+        if (!shareUrl) {
             setSnackbarMessage('Share view not available yet');
             setSnackbarOpen(true);
             return;
         }
 
-        window.open(htmlShareUrl, '_blank');
+        window.open(shareUrl, '_blank');
     };
 
     const getAiInsights = async () => {
@@ -827,17 +851,28 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                     Export & Share
                 </Typography>
                 <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Button
                             fullWidth
                             variant="contained"
                             startIcon={<Download />}
                             onClick={downloadReport}
                         >
-                            Download Report JSON
+                            Download JSON
                         </Button>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            startIcon={<Download />}
+                            onClick={downloadPdf}
+                            disabled={!reportData?.reportId}
+                        >
+                            Download PDF
+                        </Button>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Button
                             fullWidth
                             variant="outlined"
@@ -848,15 +883,15 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
                             Copy Share Link
                         </Button>
                     </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                         <Button
                             fullWidth
                             variant="outlined"
                             startIcon={<OpenInNew />}
                             onClick={openHtmlShare}
-                            disabled={!htmlShareUrl}
+                            disabled={!shareUrl}
                         >
-                            View HTML Report
+                            View Report
                         </Button>
                     </Grid>
                 </Grid>

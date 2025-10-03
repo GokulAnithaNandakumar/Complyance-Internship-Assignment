@@ -171,7 +171,7 @@ const UploadStep = ({ onNext, onUploadData, contextData, setReportData }) => {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('http://localhost:3001/upload', {
+            const response = await fetch('https://complyance-internship-assignment-zk.vercel.app/upload', {
                 method: 'POST',
                 body: formData,
             });
@@ -258,7 +258,7 @@ const UploadStep = ({ onNext, onUploadData, contextData, setReportData }) => {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:3001/analyze', {
+            const response = await fetch('https://complyance-internship-assignment-zk.vercel.app/analyze', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

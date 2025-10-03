@@ -5,7 +5,7 @@ A comprehensive backend API for analyzing invoice data against the GETS v0.1 sch
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 16+ 
+- Node.js 16+
 - Neon PostgreSQL database
 - npm or yarn
 
@@ -29,7 +29,7 @@ DATABASE_URL=postgresql://username:password@host/database?sslmode=require
 npm run dev
 ```
 
-The API will be available at `http://localhost:3001`
+The API will be available at `https://complyance-internship-assignment-zk.vercel.app`
 
 ## 🏗️ Architecture
 
@@ -51,7 +51,7 @@ Upload invoice data (CSV or JSON)
 
 **Multipart Form:**
 ```bash
-curl -X POST http://localhost:3001/upload \
+curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
   -F "file=@sample_clean.json" \
   -F "country=AE" \
   -F "erp=SAP"
@@ -59,7 +59,7 @@ curl -X POST http://localhost:3001/upload \
 
 **JSON Payload:**
 ```bash
-curl -X POST http://localhost:3001/upload \
+curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
   -H "Content-Type: application/json" \
   -d '{
     "text": "csv or json string here...",
@@ -86,7 +86,7 @@ Analyze uploaded data and generate report
 
 **Request:**
 ```bash
-curl -X POST http://localhost:3001/analyze \
+curl -X POST https://complyance-internship-assignment-zk.vercel.app/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "uploadId": "u_abc123456789",
@@ -105,7 +105,7 @@ Retrieve saved report
 
 **Request:**
 ```bash
-curl http://localhost:3001/report/r_def456789012
+curl https://complyance-internship-assignment-zk.vercel.app/report/r_def456789012
 ```
 
 **Response:** Same as analyze endpoint
@@ -161,7 +161,7 @@ The complete report structure includes:
 ```json
 {
   "reportId": "r_123",
-  "uploadId": "u_456", 
+  "uploadId": "u_456",
   "meta": {
     "version": "1.0",
     "generated_at": "2025-01-15T10:30:00Z",
@@ -186,7 +186,7 @@ The complete report structure includes:
     },
     "weights": {
       "data": "25%",
-      "coverage": "35%", 
+      "coverage": "35%",
       "rules": "30%",
       "posture": "10%"
     }
@@ -224,7 +224,7 @@ The complete report structure includes:
 ### 1. TOTALS_BALANCE
 Verifies: `total_excl_vat + vat_amount = total_incl_vat` (±0.01 tolerance)
 
-### 2. LINE_MATH  
+### 2. LINE_MATH
 Verifies: `line_total = qty × unit_price` (±0.01 tolerance)
 
 ### 3. DATE_ISO
@@ -242,7 +242,7 @@ Verifies: Both buyer and seller TRN fields are non-empty
 
 - **Data Score**: Parsing success rate + data quality
 - **Coverage Score**: Weighted by field categories (Header: 40%, Seller/Buyer: 25% each, Lines: 10%)
-- **Rules Score**: Equal weight across 5 validation rules  
+- **Rules Score**: Equal weight across 5 validation rules
 - **Posture Score**: Questionnaire responses (webhooks: 40pts, sandbox: 35pts, retries: 25pts)
 
 **Readiness Levels:**
@@ -267,7 +267,7 @@ CREATE TABLE uploads (
   original_filename VARCHAR(255)
 );
 
--- Reports table  
+-- Reports table
 CREATE TABLE reports (
   id VARCHAR(255) PRIMARY KEY,
   upload_id VARCHAR(255) REFERENCES uploads(id),
@@ -295,7 +295,7 @@ MAX_FILE_SIZE=5242880  # 5MB
 MAX_ROWS_TO_PROCESS=200
 
 # CORS
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=https://complyance-internship-assignment.vercel.app
 
 # Report Storage
 REPORT_EXPIRY_DAYS=7
@@ -307,11 +307,11 @@ Test with the provided sample files:
 
 ```bash
 # Test clean data (should mostly pass)
-curl -X POST http://localhost:3001/upload \
+curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
   -F "file=@../sample_clean.json"
 
-# Test flawed data (should fail some rules)  
-curl -X POST http://localhost:3001/upload \
+# Test flawed data (should fail some rules)
+curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
   -F "file=@../sample_flawed.csv"
 ```
 
@@ -326,7 +326,7 @@ curl -X POST http://localhost:3001/upload \
 
 - Helmet.js security headers
 - Rate limiting
-- Input validation  
+- Input validation
 - File type restrictions
 - SQL injection protection via parameterized queries
 - CORS configuration
@@ -337,7 +337,7 @@ Standard error response format:
 ```json
 {
   "error": "Error message",
-  "message": "Detailed description", 
+  "message": "Detailed description",
   "timestamp": "2025-01-15T10:30:00Z"
 }
 ```

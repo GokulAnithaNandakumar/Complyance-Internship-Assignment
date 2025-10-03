@@ -8,7 +8,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3001",
+      "value": "https://complyance-internship-assignment-zk.vercel.app",
       "type": "string"
     },
     {
@@ -17,7 +17,7 @@
       "type": "string"
     },
     {
-      "key": "reportId", 
+      "key": "reportId",
       "value": "",
       "type": "string"
     }
@@ -30,8 +30,12 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["health"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
         },
         "description": "Check API and database health status"
       },
@@ -83,8 +87,12 @@
         },
         "url": {
           "raw": "{{baseUrl}}/upload",
-          "host": ["{{baseUrl}}"],
-          "path": ["upload"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "upload"
+          ]
         },
         "description": "Upload the clean sample JSON file for testing"
       },
@@ -142,8 +150,12 @@
         },
         "url": {
           "raw": "{{baseUrl}}/upload",
-          "host": ["{{baseUrl}}"],
-          "path": ["upload"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "upload"
+          ]
         },
         "description": "Upload the flawed sample CSV file for testing validation rules"
       },
@@ -182,8 +194,12 @@
         },
         "url": {
           "raw": "{{baseUrl}}/upload",
-          "host": ["{{baseUrl}}"],
-          "path": ["upload"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "upload"
+          ]
         },
         "description": "Upload JSON data as text string"
       },
@@ -222,8 +238,12 @@
         },
         "url": {
           "raw": "{{baseUrl}}/analyze",
-          "host": ["{{baseUrl}}"],
-          "path": ["analyze"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analyze"
+          ]
         },
         "description": "Analyze uploaded data with high readiness questionnaire responses"
       },
@@ -279,8 +299,12 @@
         },
         "url": {
           "raw": "{{baseUrl}}/analyze",
-          "host": ["{{baseUrl}}"],
-          "path": ["analyze"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analyze"
+          ]
         },
         "description": "Analyze uploaded data with low readiness questionnaire responses"
       },
@@ -310,8 +334,13 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/report/{{reportId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["report", "{{reportId}}"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "report",
+            "{{reportId}}"
+          ]
         },
         "description": "Retrieve a specific report by its ID"
       },
@@ -344,8 +373,12 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/reports?limit=5",
-          "host": ["{{baseUrl}}"],
-          "path": ["reports"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reports"
+          ],
           "query": [
             {
               "key": "limit",
@@ -391,8 +424,12 @@
         },
         "url": {
           "raw": "{{baseUrl}}/analyze",
-          "host": ["{{baseUrl}}"],
-          "path": ["analyze"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analyze"
+          ]
         },
         "description": "Test error handling with invalid upload ID"
       },
@@ -422,8 +459,13 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/report/nonexistent_report_id",
-          "host": ["{{baseUrl}}"],
-          "path": ["report", "nonexistent_report_id"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "report",
+            "nonexistent_report_id"
+          ]
         },
         "description": "Test error handling with non-existent report ID"
       },
@@ -453,8 +495,12 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/",
-          "host": ["{{baseUrl}}"],
-          "path": [""]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
         },
         "description": "Get API information and available endpoints"
       },

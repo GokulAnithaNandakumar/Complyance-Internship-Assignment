@@ -38,8 +38,8 @@ echo ""
 
 # Start the development server
 echo "🌟 Starting development server..."
-echo "📡 Server will be available at: http://localhost:3001"
-echo "🔗 Frontend should connect to: http://localhost:3001"
+echo "📡 Server will be available at: https://complyance-internship-assignment-zk.vercel.app"
+echo "🔗 Frontend should connect to: https://complyance-internship-assignment-zk.vercel.app"
 echo ""
 echo "💡 Available endpoints:"
 echo "   POST   /upload      - Upload invoice data"

@@ -92,7 +92,7 @@ invoice-analyzer/
    - Verify all endpoints work
 
 4. **Frontend Integration**:
-   - Backend runs on http://localhost:3001
+   - Backend runs on https://complyance-internship-assignment-zk.vercel.app
    - Frontend should connect to this URL
    - CORS already configured
 

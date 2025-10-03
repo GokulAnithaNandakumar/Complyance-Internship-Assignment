@@ -23,7 +23,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<MainApp />} />
-          <Route path="/report/:reportId" element={<ReportPage />} />
+          <Route path="/share/:reportId" element={<ReportPage />} />
         </Routes>
       </Router>
     </ThemeProvider>

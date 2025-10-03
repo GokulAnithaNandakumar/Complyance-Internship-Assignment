@@ -47,7 +47,7 @@ A comprehensive web application that analyzes invoice data for GETS (Government 
 ```bash
 npm install
 npm run dev
-# Opens on http://localhost:5173
+# Opens on https://complyance-internship-assignment.vercel.app
 ```
 
 ### Backend
@@ -55,7 +55,7 @@ npm run dev
 cd backend
 npm install
 npm start
-# Runs on http://localhost:3001
+# Runs on https://complyance-internship-assignment-zk.vercel.app
 ```
 
 ## 🛠 Technology Stack

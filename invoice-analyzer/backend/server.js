@@ -29,7 +29,7 @@ app.use(compression());
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || 'https://complyance-internship-assignment.vercel.app',
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -155,7 +155,7 @@ const startServer = async () => {
       console.log(`📡 Server running on port ${PORT}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🗄️  Database: Connected`);
-      console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+      console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'https://complyance-internship-assignment.vercel.app'}`);
       console.log(`\n📋 Available endpoints:`);
       console.log(`   POST   http://localhost:${PORT}/upload`);
       console.log(`   POST   http://localhost:${PORT}/analyze`);

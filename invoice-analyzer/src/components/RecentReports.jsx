@@ -50,7 +50,7 @@ const RecentReports = () => {
     }, []);
 
     const handleOpenReport = (reportId) => {
-        window.open(`/report/${reportId}`, '_blank');
+        window.open(`/share/${reportId}`, '_blank');
     };
 
     if (loading) {
