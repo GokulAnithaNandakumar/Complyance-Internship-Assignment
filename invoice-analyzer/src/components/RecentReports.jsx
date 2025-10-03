@@ -22,9 +22,8 @@ import {
     Refresh,
     Assessment
 } from '@mui/icons-material';
-import axios from 'axios';
 import { formatDate, getReadinessLevel } from '../utils/helpers';
-import { api } from '../utils/api';
+import { apiService } from '../services/api';
 
 const RecentReports = () => {
     const [reports, setReports] = useState([]);
@@ -36,7 +35,7 @@ const RecentReports = () => {
         setError(null);
 
         try {
-            const response = await axios.get(`${api.baseURL}${api.endpoints.reports}?limit=10`);
+            const response = await apiService.getRecentReports(10);
             setReports(response.data.reports || []);
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to fetch recent reports');
