@@ -1,5 +1,5 @@
 // API Configuration and utilities
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://complyance-internship-assignment-zk.vercel.app';
 
 export const api = {
   baseURL: API_BASE_URL,
@@ -8,16 +8,14 @@ export const api = {
   endpoints: {
     upload: '/upload',
     analyze: '/analyze',
-    share: '/share',     // Updated from /report to /share
+    report: '/report',
     reports: '/reports',
-    health: '/health',
-    aiInsights: '/ai-insights'
+    health: '/health'
   },
 
   // Helper methods
-  getReportUrl: (reportId) => `${API_BASE_URL}/share/${reportId}`,
-  getShareUrl: (reportId) => `${window.location.origin}/share/${reportId}`,
-  getPdfUrl: (reportId) => `${API_BASE_URL}/share/${reportId}/pdf`,
+  getReportUrl: (reportId) => `${API_BASE_URL}/report/${reportId}`,
+  getShareUrl: (reportId) => `${window.location.origin}/report/${reportId}`,
 };
 
 export default api;

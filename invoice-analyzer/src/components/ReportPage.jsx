@@ -18,7 +18,9 @@ import {
 } from '@mui/material';
 import { ArrowBack, Home, Brightness4, Brightness7 } from '@mui/icons-material';
 import ResultsStep from './ResultsStep';
-import { apiService } from '../services/api';
+import axios from 'axios';
+
+const API_BASE_URL = 'https://complyance-internship-assignment-zk.vercel.app';
 
 const ReportPage = () => {
     const { reportId } = useParams();
@@ -71,7 +73,7 @@ const ReportPage = () => {
             setError(null);
 
             try {
-                const response = await apiService.getReport(reportId);
+                const response = await axios.get(`${API_BASE_URL}/share/${reportId}`);
                 setReportData(response.data);
             } catch (err) {
                 setError(err.response?.data?.error || 'Failed to load report');

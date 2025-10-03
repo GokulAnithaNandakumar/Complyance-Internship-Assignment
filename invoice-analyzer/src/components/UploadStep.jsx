@@ -18,7 +18,6 @@ import {
     CheckCircle,
     Info,
 } from '@mui/icons-material';
-import { apiService } from '../services/api';
 import { DataGrid } from '@mui/x-data-grid';
 
 const UploadStep = ({ onNext, onUploadData, contextData, setReportData }) => {
@@ -171,16 +170,22 @@ const UploadStep = ({ onNext, onUploadData, contextData, setReportData }) => {
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('country', 'AE'); // Default country
-            formData.append('erp', 'Generic'); // Default ERP
 
-            const response = await apiService.upload(formData);
+            const response = await fetch('https://complyance-internship-assignment-zk.vercel.app/upload', {
+                method: 'POST',
+                body: formData,
+            });
 
             clearInterval(progressInterval);
             setUploadProgress(100);
 
-            setUploadData(response.data);
-            onUploadData(response.data);
+            if (!response.ok) {
+                throw new Error(`Upload failed: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            setUploadData(data);
+            onUploadData(data);
             generatePreview(file);
         } catch (err) {
             setError(err.message || 'Upload failed. Please try again.');
@@ -253,16 +258,26 @@ const UploadStep = ({ onNext, onUploadData, contextData, setReportData }) => {
         setError('');
 
         try {
-            const response = await apiService.analyze(
-                uploadData.uploadId,
-                contextData.questionnaire || {
-                    webhooks: false,
-                    sandbox_env: false,
-                    retries: false
-                }
-            );
+            const response = await fetch('https://complyance-internship-assignment-zk.vercel.app/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    uploadId: uploadData.uploadId,
+                    questionnaire: contextData.questionnaire || {
+                        webhooks: false,
+                        sandbox_env: false,
+                        retries: false
+                    }
+                }),
+            });
 
-            const reportData = response.data;
+            if (!response.ok) {
+                throw new Error(`Analysis failed: ${response.statusText}`);
+            }
+
+            const reportData = await response.json();
             setReportData(reportData);
             onNext();
         } catch (err) {

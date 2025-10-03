@@ -43,7 +43,9 @@ import {
     Link,
     SmartToy
 } from '@mui/icons-material';
-import { apiService } from '../services/api';
+import axios from 'axios';
+
+const API_BASE_URL = 'https://complyance-internship-assignment-zk.vercel.app';
 
 const ScoreCard = ({ title, score, color, icon, description }) => (
     <Card variant="outlined" sx={{ height: '100%' }}>
@@ -404,7 +406,10 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
         setError(null);
 
         try {
-            const response = await apiService.analyze(uploadData.uploadId, contextData.questionnaire);
+            const response = await axios.post(`${API_BASE_URL}/analyze`, {
+                uploadId: uploadData.uploadId,
+                questionnaire: contextData.questionnaire
+            });
 
             setReportData(response.data);
             const newShareUrl = `${window.location.origin}/share/${response.data.reportId}`;
@@ -477,7 +482,9 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
         }
 
         try {
-            const response = await apiService.downloadPDF(reportData.reportId);
+            const response = await axios.get(`${API_BASE_URL}/share/${reportData.reportId}/pdf`, {
+                responseType: 'blob'
+            });
 
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
@@ -530,11 +537,11 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
         setLoadingInsights(true);
         try {
             // Call our backend endpoint for AI insights
-            const response = await apiService.getAiInsights(
-                reportData,
-                reportData.rules?.results || reportData.ruleFindings || [],
-                reportData.coverage
-            );
+            const response = await axios.post(`${API_BASE_URL}/ai-insights`, {
+                reportData: reportData,
+                ruleFindings: reportData.rules?.results || reportData.ruleFindings || [],
+                coverage: reportData.coverage
+            });
             console.log('AI insights response:', response.data);
             // Normalize AI insights data to handle different formats
             const normalizedInsights = {
