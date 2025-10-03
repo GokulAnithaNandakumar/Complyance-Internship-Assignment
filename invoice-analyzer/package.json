@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently --prefix-colors \"cyan,magenta\" --prefix \"[FRONTEND]:[API]\" \"npm run dev:frontend\" \"npm run dev:api\"",
     "dev:frontend": "vite",
-    "dev:api": "cd api && node dev-server.js",
+    "dev:api": "cd api && node scripts/dev-server.js",
     "dev:frontend-only": "vite",
     "dev:api-only": "cd api && node dev-server.js",
     "build": "vite build",
