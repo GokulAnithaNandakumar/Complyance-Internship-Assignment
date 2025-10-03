@@ -321,7 +321,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
 
   // Check if we're in a serverless environment (like Vercel)
   const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.FUNCTIONS_WORKER_RUNTIME;
-  
+
   if (isServerless) {
     return res.status(501).json({
       error: 'PDF generation not supported',
