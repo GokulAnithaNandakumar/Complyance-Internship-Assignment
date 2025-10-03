@@ -1,0 +1,22 @@
+# Development files
+api/dev-server.js
+api/server.js
+api/test-api.sh
+api/quick-test.sh
+api/start.sh
+api/.env
+api/README.md
+api/postman_collection.json
+api/sample_*.json
+api/sample_*.csv
+
+# Node modules
+api/node_modules/
+
+# Backend directory (old structure)
+backend/
+
+# Development files
+*.log
+.DS_Store
+.env.local
