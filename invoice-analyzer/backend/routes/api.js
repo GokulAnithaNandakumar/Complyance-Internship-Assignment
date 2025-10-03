@@ -377,24 +377,24 @@ router.get('/share/:reportId/pdf', async (req, res) => {
         
         // Data Quality
         doc.fontSize(14).fillColor('#333').text('Data Quality', 50, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.data}`, 50, yPos + 20);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.data}%`, 50, yPos + 20);
         doc.fontSize(10).fillColor('#666').text(`Data parsing & type validation (${weights.data || '25%'})`, 50, yPos + 50);
         
         // Coverage
         doc.fontSize(14).fillColor('#333').text('Coverage', 300, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.coverage}`, 300, yPos + 20);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.coverage}%`, 300, yPos + 20);
         doc.fontSize(10).fillColor('#666').text(`Field mapping to GETS schema (${weights.coverage || '35%'})`, 300, yPos + 50);
         
         yPos += 80;
         
         // Rules
         doc.fontSize(14).fillColor('#333').text('Rules', 50, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.rules}`, 50, yPos + 20);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.rules}%`, 50, yPos + 20);
         doc.fontSize(10).fillColor('#666').text(`Business rule validation (${weights.rules || '30%'})`, 50, yPos + 50);
         
         // Posture
         doc.fontSize(14).fillColor('#333').text('Posture', 300, yPos);
-        doc.fontSize(24).fillColor('#333').text(`${breakdown.posture}`, 300, yPos + 20);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.posture}%`, 300, yPos + 20);
         doc.fontSize(10).fillColor('#666').text(`Technical readiness (${weights.posture || '10%'})`, 300, yPos + 50);
         
         yPos += 90;
