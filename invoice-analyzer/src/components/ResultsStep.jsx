@@ -498,15 +498,7 @@ const ResultsStep = ({ uploadData, contextData, reportData, setReportData, onRes
             setSnackbarOpen(true);
         } catch (err) {
             console.error('PDF download error:', err);
-            let errorMessage = 'Failed to download PDF';
-            
-            if (err.response?.status === 501) {
-                errorMessage = 'PDF generation is not available in this environment. Please use JSON download instead.';
-            } else if (err.response?.data?.message) {
-                errorMessage = err.response.data.message;
-            }
-            
-            setSnackbarMessage(errorMessage);
+            setSnackbarMessage('Failed to download PDF');
             setSnackbarOpen(true);
         }
     };
