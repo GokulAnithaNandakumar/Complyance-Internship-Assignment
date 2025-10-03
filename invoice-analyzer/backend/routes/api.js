@@ -319,6 +319,17 @@ router.get('/share/:reportId/pdf', async (req, res) => {
     });
   }
 
+  // Check if we're in a serverless environment (like Vercel)
+  const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.FUNCTIONS_WORKER_RUNTIME;
+  
+  if (isServerless) {
+    return res.status(501).json({
+      error: 'PDF generation not supported',
+      message: 'PDF generation is not available in the serverless environment. Please use the JSON download or view the report online.',
+      suggestion: 'Use the "Download JSON" button or "View Report" to access your data.'
+    });
+  }
+
   let report;
   try {
     report = await reportService.getReport(reportId);
@@ -698,38 +709,23 @@ router.post('/ai-insights', async (req, res) => {
 // GET /health - Health check endpoint
 router.get('/health', async (req, res) => {
   try {
-    const { testConnection } = require('../config/database');
-    const dbConnected = await testConnection();
-
-    const uploadStats = await uploadService.getUploadStats();
-    const storeStats = dataStore.getStats();
-
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
       services: {
-        database: dbConnected ? 'connected' : 'disconnected',
+        api: 'operational',
         upload: 'operational',
         analysis: 'operational'
-      },
-      stats: {
-        ...uploadStats,
-        dataStore: storeStats
-      },
-      version: '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
-      database: {
-        type: 'postgres',
-        status: dbConnected ? 'connected' : 'disconnected'
       }
     });
-
   } catch (error) {
     console.error('Health check error:', error);
-    res.status(503).json({
+    res.status(500).json({
       status: 'unhealthy',
-      error: error.message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      error: error.message
     });
   }
 });
