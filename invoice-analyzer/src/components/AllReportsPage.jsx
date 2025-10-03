@@ -39,14 +39,18 @@ import {
     Email,
     Download,
     Share,
-    FilterList
+    FilterList,
+    DarkMode,
+    LightMode
 } from '@mui/icons-material';
 import axios from 'axios';
 import { formatDate, getReadinessLevel } from '../utils/helpers';
 import { api } from '../utils/api';
+import { useTheme } from '../hooks/useTheme';
 
 const AllReportsPage = () => {
     const navigate = useNavigate();
+    const { darkMode, toggleTheme } = useTheme();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -188,6 +192,11 @@ const AllReportsPage = () => {
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                         All Reports
                     </Typography>
+                    <Tooltip title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+                        <IconButton color="inherit" onClick={toggleTheme}>
+                            {darkMode ? <LightMode /> : <DarkMode />}
+                        </IconButton>
+                    </Tooltip>
                     <Tooltip title="Refresh">
                         <IconButton color="inherit" onClick={() => fetchReports(page)}>
                             <Refresh />

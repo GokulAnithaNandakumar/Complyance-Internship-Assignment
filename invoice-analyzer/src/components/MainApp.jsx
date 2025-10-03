@@ -1,8 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
-    ThemeProvider,
-    createTheme,
-    CssBaseline,
     Container,
     AppBar,
     Toolbar,
@@ -13,9 +10,10 @@ import {
     StepLabel,
     Paper,
     IconButton,
-    useMediaQuery
+    Tooltip
 } from '@mui/material';
-import { AssignmentInd, CloudUpload, Assessment, Brightness4, Brightness7 } from '@mui/icons-material';
+import { AssignmentInd, CloudUpload, Assessment, DarkMode, LightMode } from '@mui/icons-material';
+import { useTheme } from '../hooks/useTheme';
 
 // Import step components
 import ContextStep from './ContextStep';
@@ -26,44 +24,7 @@ import RecentReports from './RecentReports';
 
 const MainApp = () => {
     const [activeStep, setActiveStep] = useState(0);
-    const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-    const [darkMode, setDarkMode] = useState(prefersDarkMode);
-
-    const theme = useMemo(
-        () =>
-            createTheme({
-                palette: {
-                    mode: darkMode ? 'dark' : 'light',
-                    primary: {
-                        main: '#1976d2',
-                    },
-                    secondary: {
-                        main: '#dc004e',
-                    },
-                    background: {
-                        default: darkMode ? '#121212' : '#f5f5f5',
-                    },
-                },
-                typography: {
-                    h4: {
-                        fontWeight: 600,
-                    },
-                    h6: {
-                        fontWeight: 500,
-                    },
-                },
-                components: {
-                    MuiPaper: {
-                        styleOverrides: {
-                            root: {
-                                backgroundImage: darkMode ? 'none' : undefined,
-                            },
-                        },
-                    },
-                },
-            }),
-        [darkMode]
-    );
+    const { darkMode, toggleTheme } = useTheme();
 
     const steps = [
         {
@@ -157,23 +118,23 @@ const MainApp = () => {
     };
 
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
-                <AppBar position="static" elevation={0}>
-                    <Toolbar>
-                        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                            E-Invoicing Readiness Analyzer
-                        </Typography>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+            <AppBar position="static" elevation={0}>
+                <Toolbar>
+                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                        E-Invoicing Readiness Analyzer
+                    </Typography>
+                    <Tooltip title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
                         <IconButton
                             color="inherit"
-                            onClick={() => setDarkMode(!darkMode)}
+                            onClick={toggleTheme}
                             sx={{ ml: 2 }}
                         >
-                            {darkMode ? <Brightness7 /> : <Brightness4 />}
+                            {darkMode ? <LightMode /> : <DarkMode />}
                         </IconButton>
-                    </Toolbar>
-                </AppBar>
+                    </Tooltip>
+                </Toolbar>
+            </AppBar>
 
                 <Container maxWidth="xl" sx={{ py: 4 }}>
                     <ErrorBoundary>
@@ -209,7 +170,6 @@ const MainApp = () => {
                     </ErrorBoundary>
                 </Container>
             </Box>
-        </ThemeProvider>
     );
 };
 

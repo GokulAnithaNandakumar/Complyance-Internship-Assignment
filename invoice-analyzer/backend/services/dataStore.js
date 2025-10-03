@@ -100,7 +100,26 @@ class DataStore {
       const result = await pool.query(query, [reportId]);
 
       if (result.rows.length > 0) {
-        return JSON.parse(result.rows[0].report_json);
+        const reportData = result.rows[0].report_json;
+        
+        // Handle case where data might be stored as "[object Object]"
+        if (typeof reportData === 'string' && reportData === '[object Object]') {
+          console.warn('Invalid JSON data found in database for report:', reportId);
+          // Fallback to memory storage
+          const memoryRecord = this.memoryStore.get(reportId);
+          if (memoryRecord && Date.now() <= memoryRecord.expiresAt) {
+            return memoryRecord.data;
+          }
+          return null;
+        }
+        
+        // If it's already an object, return it directly
+        if (typeof reportData === 'object' && reportData !== null) {
+          return reportData;
+        }
+        
+        // Otherwise, parse the JSON string
+        return JSON.parse(reportData);
       }
 
       // Fallback to memory storage
