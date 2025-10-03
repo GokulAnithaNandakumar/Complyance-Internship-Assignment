@@ -355,7 +355,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
     // Scores section
     doc.fontSize(16).text('Summary', 50, yPosition);
     yPosition += 30;
-
+    
     doc.fontSize(12);
     doc.text(`Readiness Score: ${report.readinessScore || 0}`, 50, yPosition);
     doc.text(`Field Coverage: ${report.fieldCoverage || 0}%`, 200, yPosition);
@@ -373,12 +373,12 @@ router.get('/share/:reportId/pdf', async (req, res) => {
           doc.addPage();
           yPosition = 50;
         }
-
+        
         const status = rule.passed ? '✓ PASSED' : '✗ FAILED';
         doc.text(`${rule.ruleId || 'Unknown Rule'}: ${rule.description || 'No description'}`, 50, yPosition);
         doc.text(status, 450, yPosition);
         yPosition += 15;
-
+        
         if (rule.issues && rule.issues.length > 0) {
           rule.issues.forEach(issue => {
             if (yPosition > 700) {
@@ -414,10 +414,10 @@ router.get('/share/:reportId/pdf', async (req, res) => {
           doc.addPage();
           yPosition = 50;
         }
-
+        
         const mapping = field.sourceField ? `${field.getsField} ← ${field.sourceField}` : `${field.getsField} (Not mapped)`;
         doc.text(mapping, 50, yPosition);
-
+        
         if (field.sampleValue) {
           yPosition += 12;
           doc.text(`  Sample: ${field.sampleValue}`, 70, yPosition);
@@ -441,8 +441,8 @@ router.get('/share/:reportId/pdf', async (req, res) => {
       if (report.aiInsights.overallAssessment) {
         doc.text('Overall Assessment:', 50, yPosition);
         yPosition += 15;
-        const assessment = typeof report.aiInsights.overallAssessment === 'string'
-          ? report.aiInsights.overallAssessment
+        const assessment = typeof report.aiInsights.overallAssessment === 'string' 
+          ? report.aiInsights.overallAssessment 
           : JSON.stringify(report.aiInsights.overallAssessment);
         doc.text(assessment, 50, yPosition, { width: 500 });
         yPosition += doc.heightOfString(assessment, { width: 500 }) + 15;
@@ -455,7 +455,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
         }
         doc.text('Priority Issues:', 50, yPosition);
         yPosition += 15;
-
+        
         report.aiInsights.priorityIssues.forEach(issue => {
           if (yPosition > 700) {
             doc.addPage();
@@ -475,7 +475,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
         }
         doc.text('Next Steps:', 50, yPosition);
         yPosition += 15;
-
+        
         report.aiInsights.nextSteps.forEach(step => {
           if (yPosition > 700) {
             doc.addPage();
@@ -586,12 +586,12 @@ router.get('/share/:reportId/pdf', async (req, res) => {
         report.ruleFindings.forEach((rule, index) => {
           const status = rule.passed ? 'PASSED' : 'FAILED';
           const statusColor = rule.passed ? 'green' : 'red';
-
+          
           doc.fontSize(12)
              .font('Helvetica-Bold')
              .fillColor('black')
              .text(`${index + 1}. ${rule.ruleId || 'Unknown Rule'}: ${rule.description || 'No description'}`);
-
+          
           doc.font('Helvetica')
              .fillColor(statusColor)
              .text(`Status: ${status}`);
@@ -603,7 +603,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
               doc.text(`  • ${issue}`);
             });
           }
-
+          
           doc.moveDown();
         });
       } else {
@@ -625,15 +625,15 @@ router.get('/share/:reportId/pdf', async (req, res) => {
           doc.fontSize(12)
              .font('Helvetica')
              .text(`${index + 1}. ${field.getsField || 'Unknown Field'}`);
-
+          
           if (field.sourceField) {
             doc.text(`   Mapped from: ${field.sourceField}`);
           }
-
+          
           if (field.sampleValue) {
             doc.text(`   Sample: ${field.sampleValue}`);
           }
-
+          
           doc.moveDown(0.5);
         });
       } else {

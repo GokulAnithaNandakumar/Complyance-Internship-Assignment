@@ -1,39 +1,24 @@
 {
   "name": "invoice-analyzer",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "cd api && npm run dev",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "vercel-build": "vite build"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@google/generative-ai": "^0.24.1",
     "@mui/icons-material": "^7.3.3",
     "@mui/material": "^7.3.3",
     "@mui/x-data-grid": "^8.13.1",
     "axios": "^1.12.2",
-    "compression": "^1.8.1",
-    "cors": "^2.8.5",
-    "csv-parser": "^3.2.0",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
-    "helmet": "^8.1.0",
-    "multer": "^2.0.2",
-    "node-fetch": "^3.3.2",
-    "pdfkit": "^0.15.0",
-    "pg": "^8.16.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.3",
-    "uuid": "^13.0.0"
+    "react-router-dom": "^7.9.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
@@ -44,7 +29,6 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
-    "nodemon": "^3.1.10",
     "vite": "^7.1.7"
   }
 }
