@@ -3,7 +3,7 @@
 # E-Invoicing Analyzer API Test Script
 # Tests all endpoints with sample data
 
-API_BASE="https://complyance-internship-assignment-zk.vercel.app"
+API_BASE="https://complyance-internship-assignment-backend.onrender.com"
 echo "🧪 Testing E-Invoicing Analyzer API..."
 echo "Base URL: $API_BASE"
 echo ""

@@ -92,7 +92,7 @@ invoice-analyzer/
    - Verify all endpoints work
 
 4. **Frontend Integration**:
-   - Backend runs on https://complyance-internship-assignment-zk.vercel.app
+   - Backend runs on https://complyance-internship-assignment-backend.onrender.com
    - Frontend should connect to this URL
    - CORS already configured
 

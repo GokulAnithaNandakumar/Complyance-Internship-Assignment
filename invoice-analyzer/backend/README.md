@@ -29,7 +29,7 @@ DATABASE_URL=postgresql://username:password@host/database?sslmode=require
 npm run dev
 ```
 
-The API will be available at `https://complyance-internship-assignment-zk.vercel.app`
+The API will be available at `https://complyance-internship-assignment-backend.onrender.com`
 
 ## 🏗️ Architecture
 
@@ -51,7 +51,7 @@ Upload invoice data (CSV or JSON)
 
 **Multipart Form:**
 ```bash
-curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
+curl -X POST https://complyance-internship-assignment-backend.onrender.com/upload \
   -F "file=@sample_clean.json" \
   -F "country=AE" \
   -F "erp=SAP"
@@ -59,7 +59,7 @@ curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
 
 **JSON Payload:**
 ```bash
-curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
+curl -X POST https://complyance-internship-assignment-backend.onrender.com/upload \
   -H "Content-Type: application/json" \
   -d '{
     "text": "csv or json string here...",
@@ -86,7 +86,7 @@ Analyze uploaded data and generate report
 
 **Request:**
 ```bash
-curl -X POST https://complyance-internship-assignment-zk.vercel.app/analyze \
+curl -X POST https://complyance-internship-assignment-backend.onrender.com/analyze \
   -H "Content-Type: application/json" \
   -d '{
     "uploadId": "u_abc123456789",
@@ -105,7 +105,7 @@ Retrieve saved report
 
 **Request:**
 ```bash
-curl https://complyance-internship-assignment-zk.vercel.app/report/r_def456789012
+curl https://complyance-internship-assignment-backend.onrender.com/report/r_def456789012
 ```
 
 **Response:** Same as analyze endpoint
@@ -307,11 +307,11 @@ Test with the provided sample files:
 
 ```bash
 # Test clean data (should mostly pass)
-curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
+curl -X POST https://complyance-internship-assignment-backend.onrender.com/upload \
   -F "file=@../sample_clean.json"
 
 # Test flawed data (should fail some rules)
-curl -X POST https://complyance-internship-assignment-zk.vercel.app/upload \
+curl -X POST https://complyance-internship-assignment-backend.onrender.com/upload \
   -F "file=@../sample_flawed.csv"
 ```
 

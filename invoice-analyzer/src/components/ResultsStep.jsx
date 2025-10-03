@@ -45,7 +45,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 
-const API_BASE_URL = 'https://complyance-internship-assignment-zk.vercel.app';
+const API_BASE_URL = 'https://complyance-internship-assignment-backend.onrender.com';
 
 const ScoreCard = ({ title, score, color, icon, description }) => (
     <Card variant="outlined" sx={{ height: '100%' }}>

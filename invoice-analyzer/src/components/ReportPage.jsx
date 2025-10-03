@@ -20,7 +20,7 @@ import { ArrowBack, Home, Brightness4, Brightness7 } from '@mui/icons-material';
 import ResultsStep from './ResultsStep';
 import axios from 'axios';
 
-const API_BASE_URL = 'https://complyance-internship-assignment-zk.vercel.app';
+const API_BASE_URL = 'https://complyance-internship-assignment-backend.onrender.com';
 
 const ReportPage = () => {
     const { reportId } = useParams();

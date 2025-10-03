@@ -55,7 +55,7 @@ npm run dev
 cd backend
 npm install
 npm start
-# Runs on https://complyance-internship-assignment-zk.vercel.app
+# Runs on https://complyance-internship-assignment-backend.onrender.com
 ```
 
 ## 🛠 Technology Stack

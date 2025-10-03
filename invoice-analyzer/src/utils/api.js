@@ -1,5 +1,5 @@
 // API Configuration and utilities
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://complyance-internship-assignment-zk.vercel.app';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://complyance-internship-assignment-backend.onrender.com';
 
 export const api = {
   baseURL: API_BASE_URL,
