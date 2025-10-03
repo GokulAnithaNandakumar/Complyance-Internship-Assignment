@@ -331,6 +331,7 @@ router.get('/share/:reportId/pdf', async (req, res) => {
     }
 
     console.log('Generating PDF for report:', reportId);
+    console.log('Report data structure:', JSON.stringify(report, null, 2));
 
     // Generate PDF using PDFKit (server-side, no browser required)
     const PDFDocument = require('pdfkit');
@@ -359,100 +360,194 @@ router.get('/share/:reportId/pdf', async (req, res) => {
       let yPosition = 150;
 
       // Overall Score Section
-      if (report.scores_overall) {
+      if (report.scores && report.scores.overall !== undefined) {
         doc.fontSize(18).fillColor('#333').text('Overall Readiness Score', 50, yPosition);
         yPosition += 30;
 
-        const scoreColor = report.scores_overall >= 80 ? '#4caf50' :
-                          report.scores_overall >= 60 ? '#ff9800' : '#f44336';
+        const scoreColor = report.scores.overall >= 80 ? '#4caf50' :
+                          report.scores.overall >= 60 ? '#ff9800' : '#f44336';
 
-        doc.fontSize(48).fillColor(scoreColor).text(`${report.scores_overall}%`, 50, yPosition);
+        doc.fontSize(48).fillColor(scoreColor).text(`${report.scores.overall}%`, 50, yPosition);
         doc.fontSize(14).fillColor('#666').text('Compliance Score', 200, yPosition + 15);
         yPosition += 80;
       }
 
-      // Report Details Section
-      if (report.report_json) {
-        const reportData = typeof report.report_json === 'string' ?
-                          JSON.parse(report.report_json) : report.report_json;
-
-        // Summary Statistics
+      // Analysis Summary Section
+      if (report.meta) {
         doc.fontSize(16).fillColor('#333').text('Analysis Summary', 50, yPosition);
         yPosition += 25;
 
-        if (reportData.summary) {
-          const summary = reportData.summary;
-          doc.fontSize(12).fillColor('#666');
-
-          if (summary.totalRows) {
-            doc.text(`Total Records Analyzed: ${summary.totalRows}`, 50, yPosition);
-            yPosition += 20;
-          }
-
-          if (summary.validRows !== undefined) {
-            doc.text(`Valid Records: ${summary.validRows}`, 50, yPosition);
-            yPosition += 20;
-          }
-
-          if (summary.errorRows !== undefined) {
-            doc.text(`Records with Errors: ${summary.errorRows}`, 50, yPosition);
-            yPosition += 20;
-          }
+        doc.fontSize(12).fillColor('#666');
+        doc.text(`Total Records Analyzed: ${report.meta.total_rows}`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Records Processed: ${report.meta.rows_analyzed}`, 50, yPosition);
+        yPosition += 18;
+        if (report.meta.truncated) {
+          doc.fillColor('#ff9800').text('Note: Data was truncated for analysis', 50, yPosition);
+          yPosition += 18;
         }
+        doc.fillColor('#666').text(`Report Generated: ${new Date(report.meta.generated_at).toLocaleString()}`, 50, yPosition);
+        yPosition += 30;
+      }
 
-        yPosition += 20;
+      // Score Breakdown Section
+      if (report.scores && report.scores.breakdown) {
+        doc.fontSize(16).fillColor('#333').text('Score Breakdown', 50, yPosition);
+        yPosition += 25;
 
-        // Field Analysis
-        if (reportData.fieldAnalysis) {
-          doc.fontSize(16).fillColor('#333').text('Field Analysis', 50, yPosition);
-          yPosition += 25;
+        const breakdown = report.scores.breakdown;
+        doc.fontSize(12).fillColor('#666');
+        
+        doc.text(`Data Quality: ${breakdown.data}%`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Field Coverage: ${breakdown.coverage}%`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Rules Compliance: ${breakdown.rules}%`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Implementation Posture: ${breakdown.posture}%`, 50, yPosition);
+        yPosition += 18;
+        doc.fontSize(10).fillColor('#999').text(`Readiness Level: ${report.scores.readiness}`, 50, yPosition);
+        yPosition += 30;
+      }
 
-          Object.entries(reportData.fieldAnalysis).forEach(([field, analysis]) => {
+      // Field Coverage Analysis
+      if (report.coverage) {
+        doc.fontSize(16).fillColor('#333').text('Field Coverage Analysis', 50, yPosition);
+        yPosition += 25;
+
+        const coverage = report.coverage.summary;
+        doc.fontSize(12).fillColor('#666');
+        
+        doc.text(`Total Fields Required: ${coverage.total_fields}`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Successfully Matched: ${coverage.matched}`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Close Matches: ${coverage.close}`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Missing Fields: ${coverage.missing}`, 50, yPosition);
+        yPosition += 25;
+
+        // Show some matched fields
+        if (report.coverage.matches && report.coverage.matches.length > 0) {
+          doc.fontSize(14).fillColor('#333').text('Key Matched Fields:', 50, yPosition);
+          yPosition += 20;
+          
+          report.coverage.matches.slice(0, 5).forEach(match => {
             if (yPosition > 700) { // New page if needed
               doc.addPage();
               yPosition = 50;
             }
-
-            doc.fontSize(14).fillColor('#333').text(`${field}:`, 50, yPosition);
-            yPosition += 18;
-
-            if (analysis.completeness !== undefined) {
-              doc.fontSize(11).fillColor('#666').text(`Completeness: ${(analysis.completeness * 100).toFixed(1)}%`, 70, yPosition);
-              yPosition += 15;
-            }
-
-            if (analysis.accuracy !== undefined) {
-              doc.fontSize(11).text(`Accuracy: ${(analysis.accuracy * 100).toFixed(1)}%`, 70, yPosition);
-              yPosition += 15;
-            }
-
-            if (analysis.issues && analysis.issues.length > 0) {
-              doc.fontSize(11).fillColor('#f44336').text(`Issues: ${analysis.issues.slice(0, 3).join(', ')}`, 70, yPosition);
-              yPosition += 15;
-            }
-
-            yPosition += 10;
+            doc.fontSize(10).fillColor('#666').text(`• ${match.gets_field} → ${match.source_field} (${match.confidence}% confidence)`, 70, yPosition);
+            yPosition += 15;
           });
+          yPosition += 20;
         }
 
-        // Error Summary
-        if (reportData.errors && reportData.errors.length > 0) {
-          if (yPosition > 600) { // New page if needed
+        // Show missing required fields
+        if (report.coverage.missing && report.coverage.missing.length > 0) {
+          doc.fontSize(14).fillColor('#333').text('Missing Required Fields:', 50, yPosition);
+          yPosition += 20;
+          
+          report.coverage.missing.slice(0, 8).forEach(missing => {
+            if (yPosition > 700) { // New page if needed
+              doc.addPage();
+              yPosition = 50;
+            }
+            doc.fontSize(10).fillColor('#f44336').text(`• ${missing.gets_field} (${missing.type})`, 70, yPosition);
+            yPosition += 15;
+          });
+          yPosition += 20;
+        }
+      }
+
+      // Rules Compliance Section
+      if (report.rules) {
+        if (yPosition > 600) { // New page if needed
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        doc.fontSize(16).fillColor('#333').text('Rules Compliance', 50, yPosition);
+        yPosition += 25;
+
+        const rules = report.rules.summary;
+        doc.fontSize(12).fillColor('#666');
+        
+        doc.text(`Total Rules Checked: ${rules.total_rules}`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Rules Passed: ${rules.passed}`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Rules Failed: ${rules.failed}`, 50, yPosition);
+        yPosition += 18;
+        doc.text(`Compliance Score: ${rules.score}%`, 50, yPosition);
+        yPosition += 25;
+
+        // Show failed rules
+        if (report.rules.results) {
+          const failedRules = report.rules.results.filter(rule => !rule.passed);
+          if (failedRules.length > 0) {
+            doc.fontSize(14).fillColor('#333').text('Failed Rules:', 50, yPosition);
+            yPosition += 20;
+            
+            failedRules.slice(0, 5).forEach(rule => {
+              if (yPosition > 700) { // New page if needed
+                doc.addPage();
+                yPosition = 50;
+              }
+              doc.fontSize(10).fillColor('#f44336').text(`• ${rule.name}`, 70, yPosition);
+              yPosition += 12;
+              doc.fontSize(9).fillColor('#666').text(`  ${rule.description}`, 80, yPosition);
+              yPosition += 18;
+            });
+            yPosition += 20;
+          }
+        }
+      }
+
+      // Recommendations Section
+      if (report.recommendations && report.recommendations.length > 0) {
+        if (yPosition > 600) { // New page if needed
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        doc.fontSize(16).fillColor('#333').text('Recommendations', 50, yPosition);
+        yPosition += 25;
+
+        report.recommendations.slice(0, 8).forEach(rec => {
+          if (yPosition > 700) { // New page if needed
             doc.addPage();
             yPosition = 50;
           }
+          
+          const priorityColor = rec.priority === 'high' ? '#f44336' :
+                               rec.priority === 'medium' ? '#ff9800' : '#4caf50';
+          
+          doc.fontSize(10).fillColor(priorityColor).text(`• [${rec.priority.toUpperCase()}] `, 70, yPosition, { continued: true });
+          doc.fillColor('#333').text(rec.message);
+          yPosition += 18;
+        });
+        yPosition += 20;
+      }
 
-          doc.fontSize(16).fillColor('#333').text('Common Issues', 50, yPosition);
-          yPosition += 25;
-
-          const errorSummary = {};
-          reportData.errors.forEach(error => {
-            const key = error.type || 'General';
-            errorSummary[key] = (errorSummary[key] || 0) + 1;
-          });
-
-          Object.entries(errorSummary).slice(0, 10).forEach(([errorType, count]) => {
-            doc.fontSize(11).fillColor('#666').text(`${errorType}: ${count} occurrences`, 50, yPosition);
+      // AI Insights Section
+      if (report.aiInsights && report.aiInsights.overallAssessment !== "AI insights are not available for this report.") {
+        if (yPosition > 650) { // New page if needed
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        doc.fontSize(16).fillColor('#333').text('AI Insights', 50, yPosition);
+        yPosition += 25;
+        
+        doc.fontSize(10).fillColor('#666').text(report.aiInsights.overallAssessment, 50, yPosition, { width: 500 });
+        yPosition += 40;
+        
+        if (report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0) {
+          doc.fontSize(12).fillColor('#333').text('Priority Issues:', 50, yPosition);
+          yPosition += 18;
+          report.aiInsights.priorityIssues.slice(0, 3).forEach(issue => {
+            doc.fontSize(9).fillColor('#666').text(`• ${issue}`, 70, yPosition);
             yPosition += 15;
           });
         }
