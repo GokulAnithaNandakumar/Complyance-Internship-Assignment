@@ -331,7 +331,6 @@ router.get('/share/:reportId/pdf', async (req, res) => {
     }
 
     console.log('Generating PDF for report:', reportId);
-    console.log('Report data structure:', JSON.stringify(report, null, 2));
 
     // Generate PDF using PDFKit (server-side, no browser required)
     const PDFDocument = require('pdfkit');
