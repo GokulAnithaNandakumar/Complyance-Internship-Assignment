@@ -109,9 +109,7 @@ class EmailService {
             <a href="${shareUrl}" style="display: inline-block; background: #007bff; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 0;">
                 📋 View Full Report
             </a>
-            <a href="${pdfUrl}" style="display: inline-block; background: #28a745; color: white; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; margin: 0 10px 10px 0;">
-                📄 Download PDF
-            </a>
+
         </div>
 
         <div style="background: #e3f2fd; padding: 15px; border-radius: 6px; border-left: 4px solid #2196f3;">
