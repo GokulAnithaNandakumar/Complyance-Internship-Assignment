@@ -348,206 +348,234 @@ router.get('/share/:reportId/pdf', async (req, res) => {
 
     // PDF Content Generation
     try {
-      // Header
-      doc.fontSize(24).fillColor('#1976d2').text('E-Invoicing Readiness Analysis Report', 50, 50);
-      doc.fontSize(12).fillColor('#666').text(`Report ID: ${reportId}`, 50, 85);
-      doc.fontSize(12).text(`Generated: ${new Date().toLocaleString()}`, 50, 100);
-
-      // Draw header line
-      doc.strokeColor('#1976d2').lineWidth(2).moveTo(50, 125).lineTo(550, 125).stroke();
-
-      let yPosition = 150;
-
-      // Overall Score Section
+    try {
+      // Modern Header Design
+      doc.fontSize(20).fillColor('#1976d2').text('Analysis Report - ' + reportId, 50, 40);
+      doc.fontSize(14).fillColor('#666').text('Analysis Results', 50, 70);
+      
+      // Large Score Display
+      let yPos = 100;
       if (report.scores && report.scores.overall !== undefined) {
-        doc.fontSize(18).fillColor('#333').text('Overall Readiness Score', 50, yPosition);
-        yPosition += 30;
-
         const scoreColor = report.scores.overall >= 80 ? '#4caf50' :
                           report.scores.overall >= 60 ? '#ff9800' : '#f44336';
-
-        doc.fontSize(48).fillColor(scoreColor).text(`${report.scores.overall}%`, 50, yPosition);
-        doc.fontSize(14).fillColor('#666').text('Compliance Score', 200, yPosition + 15);
-        yPosition += 80;
+        
+        doc.fontSize(60).fillColor(scoreColor).text(`${report.scores.overall}`, 50, yPos);
+        doc.fontSize(16).fillColor('#333').text('Overall Readiness Score', 130, yPos + 15);
+        
+        // Readiness Level
+        const readinessLevel = typeof report.scores.readiness === 'object' ? 
+                              report.scores.readiness.level || 'Unknown' : 
+                              report.scores.readiness;
+        doc.fontSize(14).fillColor('#666').text(readinessLevel, 130, yPos + 40);
+        yPos += 90;
       }
 
-      // Analysis Summary Section
-      if (report.meta) {
-        doc.fontSize(16).fillColor('#333').text('Analysis Summary', 50, yPosition);
-        yPosition += 25;
-
-        doc.fontSize(12).fillColor('#666');
-        doc.text(`Total Records Analyzed: ${report.meta.total_rows}`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Records Processed: ${report.meta.rows_analyzed}`, 50, yPosition);
-        yPosition += 18;
-        if (report.meta.truncated) {
-          doc.fillColor('#ff9800').text('Note: Data was truncated for analysis', 50, yPosition);
-          yPosition += 18;
-        }
-        doc.fillColor('#666').text(`Report Generated: ${new Date(report.meta.generated_at).toLocaleString()}`, 50, yPosition);
-        yPosition += 30;
-      }
-
-      // Score Breakdown Section
+      // Score Breakdown Grid
       if (report.scores && report.scores.breakdown) {
-        doc.fontSize(16).fillColor('#333').text('Score Breakdown', 50, yPosition);
-        yPosition += 25;
-
         const breakdown = report.scores.breakdown;
-        doc.fontSize(12).fillColor('#666');
+        const weights = report.scores.weights || {};
         
-        doc.text(`Data Quality: ${breakdown.data}%`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Field Coverage: ${breakdown.coverage}%`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Rules Compliance: ${breakdown.rules}%`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Implementation Posture: ${breakdown.posture}%`, 50, yPosition);
-        yPosition += 18;
-        doc.fontSize(10).fillColor('#999').text(`Readiness Level: ${report.scores.readiness}`, 50, yPosition);
-        yPosition += 30;
+        // Data Quality
+        doc.fontSize(14).fillColor('#333').text('Data Quality', 50, yPos);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.data}`, 50, yPos + 20);
+        doc.fontSize(10).fillColor('#666').text(`Data parsing & type validation (${weights.data || '25%'})`, 50, yPos + 50);
+        
+        // Coverage
+        doc.fontSize(14).fillColor('#333').text('Coverage', 300, yPos);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.coverage}`, 300, yPos + 20);
+        doc.fontSize(10).fillColor('#666').text(`Field mapping to GETS schema (${weights.coverage || '35%'})`, 300, yPos + 50);
+        
+        yPos += 80;
+        
+        // Rules
+        doc.fontSize(14).fillColor('#333').text('Rules', 50, yPos);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.rules}`, 50, yPos + 20);
+        doc.fontSize(10).fillColor('#666').text(`Business rule validation (${weights.rules || '30%'})`, 50, yPos + 50);
+        
+        // Posture
+        doc.fontSize(14).fillColor('#333').text('Posture', 300, yPos);
+        doc.fontSize(24).fillColor('#333').text(`${breakdown.posture}`, 300, yPos + 20);
+        doc.fontSize(10).fillColor('#666').text(`Technical readiness (${weights.posture || '10%'})`, 300, yPos + 50);
+        
+        yPos += 90;
       }
 
-      // Field Coverage Analysis
-      if (report.coverage) {
-        doc.fontSize(16).fillColor('#333').text('Field Coverage Analysis', 50, yPosition);
-        yPosition += 25;
-
-        const coverage = report.coverage.summary;
-        doc.fontSize(12).fillColor('#666');
+      // Field Coverage Summary
+      if (report.coverage && report.coverage.summary) {
+        doc.fontSize(16).fillColor('#333').text('Field Coverage Analysis', 50, yPos);
+        yPos += 30;
         
-        doc.text(`Total Fields Required: ${coverage.total_fields}`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Successfully Matched: ${coverage.matched}`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Close Matches: ${coverage.close}`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Missing Fields: ${coverage.missing}`, 50, yPosition);
-        yPosition += 25;
-
-        // Show some matched fields
-        if (report.coverage.matches && report.coverage.matches.length > 0) {
-          doc.fontSize(14).fillColor('#333').text('Key Matched Fields:', 50, yPosition);
-          yPosition += 20;
-          
-          report.coverage.matches.slice(0, 5).forEach(match => {
-            if (yPosition > 700) { // New page if needed
-              doc.addPage();
-              yPosition = 50;
-            }
-            doc.fontSize(10).fillColor('#666').text(`• ${match.gets_field} → ${match.source_field} (${match.confidence}% confidence)`, 70, yPosition);
-            yPosition += 15;
-          });
-          yPosition += 20;
-        }
-
-        // Show missing required fields
-        if (report.coverage.missing && report.coverage.missing.length > 0) {
-          doc.fontSize(14).fillColor('#333').text('Missing Required Fields:', 50, yPosition);
-          yPosition += 20;
-          
-          report.coverage.missing.slice(0, 8).forEach(missing => {
-            if (yPosition > 700) { // New page if needed
-              doc.addPage();
-              yPosition = 50;
-            }
-            doc.fontSize(10).fillColor('#f44336').text(`• ${missing.gets_field} (${missing.type})`, 70, yPosition);
-            yPosition += 15;
-          });
-          yPosition += 20;
-        }
+        const summary = report.coverage.summary;
+        const boxWidth = 120;
+        const boxHeight = 60;
+        
+        // Matched box
+        doc.rect(50, yPos, boxWidth, boxHeight).fillAndStroke('#e8f5e8', '#4caf50');
+        doc.fontSize(20).fillColor('#333').text(`${summary.matched}`, 50 + boxWidth/2 - 15, yPos + 15);
+        doc.fontSize(12).fillColor('#333').text('Matched', 50 + boxWidth/2 - 25, yPos + 40);
+        
+        // Close Match box
+        doc.rect(200, yPos, boxWidth, boxHeight).fillAndStroke('#fff3e0', '#ff9800');
+        doc.fontSize(20).fillColor('#333').text(`${summary.close}`, 200 + boxWidth/2 - 15, yPos + 15);
+        doc.fontSize(12).fillColor('#333').text('Close Match', 200 + boxWidth/2 - 35, yPos + 40);
+        
+        // Missing box
+        doc.rect(350, yPos, boxWidth, boxHeight).fillAndStroke('#ffebee', '#f44336');
+        doc.fontSize(20).fillColor('#333').text(`${summary.missing}`, 350 + boxWidth/2 - 15, yPos + 15);
+        doc.fontSize(12).fillColor('#333').text('Missing', 350 + boxWidth/2 - 25, yPos + 40);
+        
+        yPos += 100;
       }
 
-      // Rules Compliance Section
+      // Start new page for validation results
+      doc.addPage();
+      yPos = 50;
+
+      // Validation Results Section
       if (report.rules) {
-        if (yPosition > 600) { // New page if needed
-          doc.addPage();
-          yPosition = 50;
-        }
-        
-        doc.fontSize(16).fillColor('#333').text('Rules Compliance', 50, yPosition);
-        yPosition += 25;
+        const rules = report.rules;
+        doc.fontSize(18).fillColor('#333').text(`Validation Results (${rules.summary.passed}/${rules.summary.total_rules} Passing)`, 50, yPos);
+        yPos += 40;
 
-        const rules = report.rules.summary;
-        doc.fontSize(12).fillColor('#666');
-        
-        doc.text(`Total Rules Checked: ${rules.total_rules}`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Rules Passed: ${rules.passed}`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Rules Failed: ${rules.failed}`, 50, yPosition);
-        yPosition += 18;
-        doc.text(`Compliance Score: ${rules.score}%`, 50, yPosition);
-        yPosition += 25;
+        // Display each rule
+        if (rules.results && rules.results.length > 0) {
+          rules.results.forEach(rule => {
+            if (yPos > 650) {
+              doc.addPage();
+              yPos = 50;
+            }
 
-        // Show failed rules
-        if (report.rules.results) {
-          const failedRules = report.rules.results.filter(rule => !rule.passed);
-          if (failedRules.length > 0) {
-            doc.fontSize(14).fillColor('#333').text('Failed Rules:', 50, yPosition);
-            yPosition += 20;
-            
-            failedRules.slice(0, 5).forEach(rule => {
-              if (yPosition > 700) { // New page if needed
-                doc.addPage();
-                yPosition = 50;
+            // Rule name and description
+            doc.fontSize(14).fillColor('#333').text(rule.name, 50, yPos);
+            doc.fontSize(10).fillColor('#666').text(rule.description, 50, yPos + 20, { width: 500 });
+            yPos += 45;
+
+            // Status
+            if (rule.passed) {
+              doc.fontSize(12).fillColor('#4caf50').text('PASS', 50, yPos);
+            } else {
+              doc.fontSize(12).fillColor('#f44336').text('FAIL', 50, yPos);
+              yPos += 20;
+              
+              // Error details
+              if (rule.details) {
+                doc.fontSize(10).fillColor('#f44336').text(`❌ ${rule.details}`, 50, yPos);
+                yPos += 15;
               }
-              doc.fontSize(10).fillColor('#f44336').text(`• ${rule.name}`, 70, yPosition);
-              yPosition += 12;
-              doc.fontSize(9).fillColor('#666').text(`  ${rule.description}`, 80, yPosition);
-              yPosition += 18;
-            });
-            yPosition += 20;
-          }
+              
+              // Suggestion
+              if (rule.suggestion) {
+                doc.fontSize(10).fillColor('#666').text(`Solution: ${rule.suggestion}`, 50, yPos, { width: 500 });
+                yPos += 20;
+              }
+            }
+            
+            yPos += 30;
+          });
         }
       }
 
-      // Recommendations Section
-      if (report.recommendations && report.recommendations.length > 0) {
-        if (yPosition > 600) { // New page if needed
-          doc.addPage();
-          yPosition = 50;
-        }
-        
-        doc.fontSize(16).fillColor('#333').text('Recommendations', 50, yPosition);
-        yPosition += 25;
-
-        report.recommendations.slice(0, 8).forEach(rec => {
-          if (yPosition > 700) { // New page if needed
-            doc.addPage();
-            yPosition = 50;
-          }
-          
-          const priorityColor = rec.priority === 'high' ? '#f44336' :
-                               rec.priority === 'medium' ? '#ff9800' : '#4caf50';
-          
-          doc.fontSize(10).fillColor(priorityColor).text(`• [${rec.priority.toUpperCase()}] `, 70, yPosition, { continued: true });
-          doc.fillColor('#333').text(rec.message);
-          yPosition += 18;
-        });
-        yPosition += 20;
+      // Add new page for AI insights if needed
+      if (yPos > 500) {
+        doc.addPage();
+        yPos = 50;
       }
 
       // AI Insights Section
       if (report.aiInsights && report.aiInsights.overallAssessment !== "AI insights are not available for this report.") {
-        if (yPosition > 650) { // New page if needed
-          doc.addPage();
-          yPosition = 50;
-        }
-        
-        doc.fontSize(16).fillColor('#333').text('AI Insights', 50, yPosition);
-        yPosition += 25;
-        
-        doc.fontSize(10).fillColor('#666').text(report.aiInsights.overallAssessment, 50, yPosition, { width: 500 });
-        yPosition += 40;
-        
+        doc.fontSize(18).fillColor('#333').text('AI-Powered Insights & Recommendations', 50, yPos);
+        yPos += 40;
+
+        // Overall Assessment
+        doc.fontSize(14).fillColor('#333').text('Overall Assessment', 50, yPos);
+        yPos += 20;
+        doc.fontSize(10).fillColor('#666').text(report.aiInsights.overallAssessment, 50, yPos, { width: 500 });
+        yPos += 60;
+
+        // Priority Issues
         if (report.aiInsights.priorityIssues && report.aiInsights.priorityIssues.length > 0) {
-          doc.fontSize(12).fillColor('#333').text('Priority Issues:', 50, yPosition);
-          yPosition += 18;
-          report.aiInsights.priorityIssues.slice(0, 3).forEach(issue => {
-            doc.fontSize(9).fillColor('#666').text(`• ${issue}`, 70, yPosition);
-            yPosition += 15;
+          doc.fontSize(14).fillColor('#333').text('Priority Issues to Fix', 50, yPos);
+          yPos += 25;
+
+          report.aiInsights.priorityIssues.slice(0, 5).forEach((issue, index) => {
+            if (yPos > 650) {
+              doc.addPage();
+              yPos = 50;
+            }
+
+            // Handle both string and object formats
+            let issueTitle = '';
+            let issueDescription = '';
+            
+            if (typeof issue === 'string') {
+              issueTitle = issue;
+            } else if (typeof issue === 'object') {
+              issueTitle = issue.issue || issue.title || `Priority Issue ${index + 1}`;
+              issueDescription = issue.recommendation || issue.description || '';
+            }
+
+            doc.fontSize(12).fillColor('#f44336').text(issueTitle, 50, yPos);
+            yPos += 18;
+            
+            if (issueDescription) {
+              doc.fontSize(10).fillColor('#666').text(issueDescription, 50, yPos, { width: 500 });
+              yPos += 25;
+            }
+            
+            yPos += 10;
+          });
+        }
+
+        // Field Mapping Suggestions
+        if (report.aiInsights.fieldMappingSuggestions && report.aiInsights.fieldMappingSuggestions.length > 0) {
+          if (yPos > 500) {
+            doc.addPage();
+            yPos = 50;
+          }
+          
+          doc.fontSize(14).fillColor('#333').text('Field Mapping Suggestions', 50, yPos);
+          yPos += 25;
+
+          report.aiInsights.fieldMappingSuggestions.slice(0, 5).forEach(suggestion => {
+            if (yPos > 650) {
+              doc.addPage();
+              yPos = 50;
+            }
+
+            const mapping = typeof suggestion === 'object' ? suggestion.mapping || suggestion.title : suggestion;
+            const rationale = typeof suggestion === 'object' ? suggestion.rationale : '';
+            
+            doc.fontSize(11).fillColor('#1976d2').text(mapping, 50, yPos);
+            yPos += 15;
+            
+            if (rationale) {
+              doc.fontSize(9).fillColor('#666').text(rationale, 50, yPos, { width: 500 });
+              yPos += 20;
+            }
+            
+            yPos += 10;
+          });
+        }
+
+        // Next Steps
+        if (report.aiInsights.nextSteps && report.aiInsights.nextSteps.length > 0) {
+          if (yPos > 400) {
+            doc.addPage();
+            yPos = 50;
+          }
+          
+          doc.fontSize(14).fillColor('#333').text('Recommended Next Steps', 50, yPos);
+          yPos += 25;
+
+          report.aiInsights.nextSteps.slice(0, 5).forEach((step, index) => {
+            if (yPos > 650) {
+              doc.addPage();
+              yPos = 50;
+            }
+
+            const stepText = typeof step === 'object' ? step.step || step.action : step;
+            doc.fontSize(10).fillColor('#333').text(`${index + 1}. ${stepText}`, 50, yPos, { width: 500 });
+            yPos += 25;
           });
         }
       }
@@ -562,6 +590,15 @@ router.get('/share/:reportId/pdf', async (req, res) => {
       }
 
       doc.end();
+
+    } catch (error) {
+      console.error('PDFKit generation error:', error);
+      doc.end();
+      return res.status(500).json({
+        error: 'PDF generation failed',
+        message: error.message
+      });
+    }
 
     } catch (error) {
       console.error('PDFKit generation error:', error);
