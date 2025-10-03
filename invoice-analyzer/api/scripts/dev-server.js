@@ -1,9 +1,9 @@
-const app = require('./index');
+const app = require('../index');
 const dotenv = require('dotenv');
 const path = require('path');
 
 // Load environment variables
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const PORT = process.env.PORT || 3001;
 
