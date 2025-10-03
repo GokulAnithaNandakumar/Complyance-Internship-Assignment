@@ -25,6 +25,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainApp />} />
           <Route path="/share/:reportId" element={<ReportPage />} />
+          <Route path="/report/:reportId" element={<ReportPage />} />
           <Route path="/reports" element={<AllReportsPage />} />
         </Routes>
       </Router>

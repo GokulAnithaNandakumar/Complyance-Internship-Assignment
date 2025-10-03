@@ -10,6 +10,7 @@ export const api = {
     analyze: '/analyze',
     report: '/report',
     reports: '/reports',
+    share: '/share',
     health: '/health'
   },
 

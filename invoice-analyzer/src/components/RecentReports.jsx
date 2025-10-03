@@ -53,7 +53,7 @@ const RecentReports = () => {
     }, []);
 
     const handleOpenReport = (reportId) => {
-        navigate(`/share/${reportId}`);
+        navigate(`/report/${reportId}`);
     };
 
     if (loading) {

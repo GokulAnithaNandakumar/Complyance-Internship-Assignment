@@ -94,7 +94,7 @@ const AllReportsPage = () => {
         setEmailSending(true);
         try {
             await axios.post(
-                `${api.baseURL}/share/${emailDialog.reportId}/email`,
+                `${api.baseURL}${api.endpoints.share}/${emailDialog.reportId}/email`,
                 { email: emailAddress }
             );
             setEmailSuccess('Report link sent successfully!');
@@ -115,7 +115,7 @@ const AllReportsPage = () => {
     };
 
     const viewReport = (reportId) => {
-        navigate(`/share/${reportId}`);
+        navigate(`/report/${reportId}`);
     };
 
     const shareReport = async (reportId) => {
@@ -172,9 +172,9 @@ const AllReportsPage = () => {
     }
 
     return (
-        <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+        <Box sx={{ minHeight: '100vh' }}>
             {/* App Bar */}
-            <AppBar position="sticky" sx={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}>
+            <AppBar position="sticky">
                 <Toolbar>
                     <IconButton
                         edge="start"
@@ -200,7 +200,7 @@ const AllReportsPage = () => {
                 {/* Header Stats */}
                 <Grid container spacing={3} sx={{ mb: 4 }}>
                     <Grid size={{ xs: 12, md: 3 }}>
-                        <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
+                        <Card>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="primary">
                                     {totalReports}
@@ -212,7 +212,7 @@ const AllReportsPage = () => {
                         </Card>
                     </Grid>
                     <Grid size={{ xs: 12, md: 3 }}>
-                        <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
+                        <Card>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="success.main">
                                     {reports.filter(r => (r.scores_overall || r.overallScore || 0) >= 80).length}
@@ -224,7 +224,7 @@ const AllReportsPage = () => {
                         </Card>
                     </Grid>
                     <Grid size={{ xs: 12, md: 3 }}>
-                        <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
+                        <Card>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="warning.main">
                                     {reports.filter(r => {
@@ -239,7 +239,7 @@ const AllReportsPage = () => {
                         </Card>
                     </Grid>
                     <Grid size={{ xs: 12, md: 3 }}>
-                        <Card sx={{ bgcolor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)' }}>
+                        <Card>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="error.main">
                                     {reports.filter(r => (r.scores_overall || r.overallScore || 0) < 60).length}
@@ -253,7 +253,7 @@ const AllReportsPage = () => {
                 </Grid>
 
                 {/* Reports Table */}
-                <Card sx={{ bgcolor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', borderRadius: 3 }}>
+                <Card>
                     <CardContent>
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                             <Typography variant="h5" fontWeight="bold">
