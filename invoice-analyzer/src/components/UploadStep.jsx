@@ -446,6 +446,7 @@ const UploadStep = ({ onNext, onUploadData, contextData, setReportData }) => {
                 >
                     {analyzing ? 'Analyzing...' : 'Analyze Data'}
                 </Button>
+                It may take upto a minute if render server is not booted
             </Box>
         </Box>
     );
