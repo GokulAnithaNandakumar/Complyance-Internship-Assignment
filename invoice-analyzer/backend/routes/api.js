@@ -313,6 +313,52 @@ router.get('/report/:reportId', async (req, res) => {
   }
 });
 
+// DELETE /report/:reportId - Delete a report and all related data
+router.delete('/report/:reportId', async (req, res) => {
+  try {
+    const { reportId } = req.params;
+
+    if (!reportId) {
+      return res.status(400).json({
+        error: 'Missing report ID',
+        message: 'Report ID is required'
+      });
+    }
+
+    // Check if report exists before deletion
+    const existingReport = await dataStore.getReport(reportId);
+    if (!existingReport) {
+      return res.status(404).json({
+        error: 'Report not found',
+        message: `No report found with ID: ${reportId}`
+      });
+    }
+
+    // Delete the report from database and memory
+    const deleted = await dataStore.deleteReport(reportId);
+
+    if (deleted) {
+      res.json({
+        success: true,
+        message: `Report ${reportId} deleted successfully`,
+        reportId: reportId
+      });
+    } else {
+      res.status(500).json({
+        error: 'Failed to delete report',
+        message: 'Report could not be deleted from storage'
+      });
+    }
+
+  } catch (error) {
+    console.error('Report deletion error:', error);
+    res.status(500).json({
+      error: 'Failed to delete report',
+      message: error.message
+    });
+  }
+});
+
 // GET /share/:reportId - Retrieve saved report for sharing
 router.get('/share/:reportId', async (req, res) => {
   try {

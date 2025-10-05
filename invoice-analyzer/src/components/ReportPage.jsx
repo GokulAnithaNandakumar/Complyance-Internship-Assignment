@@ -112,7 +112,7 @@ const ReportPage = () => {
                                     <ArrowBack />
                                 </IconButton>
                                 <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                                    Loading Report backend hosted on render so it may take upto a minute for the server to boot up...
+                                    Loading Report...
                                 </Typography>
                                 <IconButton
                                     color="inherit"

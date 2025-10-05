@@ -110,6 +110,25 @@ curl https://complyance-internship-assignment-backend.onrender.com/report/r_def4
 
 **Response:** Same as analyze endpoint
 
+### DELETE /report/:reportId
+Delete a report and all related data
+
+**Request:**
+```bash
+curl -X DELETE https://complyance-internship-assignment-backend.onrender.com/report/r_def456789012
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Report r_def456789012 deleted successfully",
+  "reportId": "r_def456789012"
+}
+```
+
+**Note:** This endpoint permanently removes the report from both database and memory storage. This action cannot be undone.
+
 ### GET /reports?limit=10
 Get recent reports list
 

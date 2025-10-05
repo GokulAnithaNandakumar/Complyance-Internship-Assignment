@@ -86,6 +86,7 @@ app.get('/', (req, res) => {
       upload: 'POST /upload',
       analyze: 'POST /analyze',
       report: 'GET /report/:reportId',
+      deleteReport: 'DELETE /report/:reportId',
       reports: 'GET /reports',
       health: 'GET /health'
     },
@@ -160,6 +161,7 @@ const startServer = async () => {
       console.log(`   POST   http://localhost:${PORT}/upload`);
       console.log(`   POST   http://localhost:${PORT}/analyze`);
       console.log(`   GET    http://localhost:${PORT}/report/:reportId`);
+      console.log(`   DELETE http://localhost:${PORT}/report/:reportId`);
       console.log(`   GET    http://localhost:${PORT}/reports`);
       console.log(`   GET    http://localhost:${PORT}/health`);
       console.log(`\n📖 API Documentation: Check README.md`);

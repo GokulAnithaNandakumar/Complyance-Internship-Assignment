@@ -97,6 +97,24 @@
             },
             "description": "PRD Required: GET /report/:reportId endpoint. Must return from datastore."
           }
+        },
+        {
+          "name": "4. DELETE /report/:reportId - Delete Report",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report/{{reportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report",
+                "{{reportId}}"
+              ]
+            },
+            "description": "Delete a report and all related data. Only available in /reports page."
+          }
         }
       ],
       "description": "The 3 endpoints required by the PRD API contract"

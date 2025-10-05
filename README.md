@@ -83,6 +83,7 @@ Use the provided sample files to test the tool:
 | `POST` | `/upload` | Upload CSV/JSON files or text |
 | `POST` | `/analyze` | Run analysis with questionnaire |
 | `GET` | `/report/:id` | Retrieve saved report JSON |
+| `DELETE` | `/report/:id` | Delete report and all related data |
 | `GET` | `/reports?limit=10` | Recent reports list (P1) |
 | `GET` | `/health` | System health + DB status |
 

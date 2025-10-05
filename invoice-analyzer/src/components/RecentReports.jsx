@@ -63,7 +63,7 @@ const RecentReports = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
                         <CircularProgress size={40} />
                         <Typography variant="body1" sx={{ ml: 2 }}>
-                            Loading recent reports...
+                            Loading recent reports it may take upto a minute for render backend to boot up...
                         </Typography>
                     </Box>
                 </CardContent>

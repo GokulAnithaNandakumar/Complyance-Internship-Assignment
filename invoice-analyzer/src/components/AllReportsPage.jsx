@@ -41,7 +41,8 @@ import {
     Share,
     FilterList,
     DarkMode,
-    LightMode
+    LightMode,
+    Delete
 } from '@mui/icons-material';
 import axios from 'axios';
 import { formatDate, getReadinessLevel } from '../utils/helpers';
@@ -60,6 +61,8 @@ const AllReportsPage = () => {
     const [emailAddress, setEmailAddress] = useState('');
     const [emailSending, setEmailSending] = useState(false);
     const [emailSuccess, setEmailSuccess] = useState(null);
+    const [deleteDialog, setDeleteDialog] = useState({ open: false, reportId: null });
+    const [deleting, setDeleting] = useState(false);
 
     const reportsPerPage = 20;
 
@@ -110,6 +113,32 @@ const AllReportsPage = () => {
             setEmailSuccess(error.response?.data?.message || 'Failed to send email');
         } finally {
             setEmailSending(false);
+        }
+    };
+
+    const handleDeleteReport = async (reportId) => {
+        setDeleteDialog({ open: true, reportId });
+    };
+
+    const confirmDeleteReport = async () => {
+        if (!deleteDialog.reportId) return;
+
+        setDeleting(true);
+        try {
+            await axios.delete(`${api.baseURL}/report/${deleteDialog.reportId}`);
+
+            // Remove the deleted report from the list
+            setReports(reports.filter(report =>
+                (report.reportId || report.id) !== deleteDialog.reportId
+            ));
+            setTotalReports(prev => prev - 1);
+
+            setDeleteDialog({ open: false, reportId: null });
+        } catch (error) {
+            console.error('Failed to delete report:', error);
+            setError(error.response?.data?.message || 'Failed to delete report');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -388,6 +417,15 @@ const AllReportsPage = () => {
                                                                         <Share fontSize="small" />
                                                                     </IconButton>
                                                                 </Tooltip>
+                                                                <Tooltip title="Delete Report">
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={() => handleDeleteReport(reportId)}
+                                                                        color="error"
+                                                                    >
+                                                                        <Delete fontSize="small" />
+                                                                    </IconButton>
+                                                                </Tooltip>
                                                             </Box>
                                                         </TableCell>
                                                     </TableRow>
@@ -465,6 +503,46 @@ const AllReportsPage = () => {
                         startIcon={emailSending ? <CircularProgress size={16} /> : <Email />}
                     >
                         {emailSending ? 'Sending...' : 'Send Email'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialog.open}
+                onClose={() => setDeleteDialog({ open: false, reportId: null })}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" alignItems="center">
+                        <Delete sx={{ mr: 1, color: 'error.main' }} />
+                        Confirm Delete Report
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        Are you sure you want to delete this report? This action cannot be undone.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Report ID: <strong>{deleteDialog.reportId}</strong>
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => setDeleteDialog({ open: false, reportId: null })}
+                        disabled={deleting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={confirmDeleteReport}
+                        variant="contained"
+                        color="error"
+                        disabled={deleting}
+                        startIcon={deleting ? <CircularProgress size={16} /> : <Delete />}
+                    >
+                        {deleting ? 'Deleting...' : 'Delete Report'}
                     </Button>
                 </DialogActions>
             </Dialog>

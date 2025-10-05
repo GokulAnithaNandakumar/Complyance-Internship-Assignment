@@ -196,6 +196,28 @@ class DataStore {
     }
   }
 
+  // Delete report from database and memory
+  async deleteReport(reportId) {
+    try {
+      const query = 'DELETE FROM reports WHERE id = $1 RETURNING id';
+      const result = await pool.query(query, [reportId]);
+
+      // Also remove from memory storage if exists
+      this.memoryStore.delete(reportId);
+
+      console.log('Report deleted successfully:', reportId);
+      return result.rows.length > 0;
+    } catch (error) {
+      console.error('Database delete error:', error);
+
+      // Try to remove from memory storage as fallback
+      const existed = this.memoryStore.has(reportId);
+      this.memoryStore.delete(reportId);
+
+      return existed;
+    }
+  }
+
   // Get store statistics
   getStats() {
     this.cleanup();
