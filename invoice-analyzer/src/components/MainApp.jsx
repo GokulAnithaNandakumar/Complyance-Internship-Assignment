@@ -136,40 +136,40 @@ const MainApp = () => {
                 </Toolbar>
             </AppBar>
 
-                <Container maxWidth="xl" sx={{ py: 4 }}>
-                    <ErrorBoundary>
-                        <Paper elevation={1} sx={{ mb: 4, p: 4 }}>
-                            <Box sx={{ mb: 4 }}>
-                                <Typography variant="h4" gutterBottom align="center">
-                                    Invoice Data Analysis
-                                </Typography>
-                                <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
-                                    Analyze your invoice data for GETS compliance and readiness
-                                </Typography>
+            <Container maxWidth="xl" sx={{ py: 4 }}>
+                <ErrorBoundary>
+                    <Paper elevation={1} sx={{ mb: 4, p: 4 }}>
+                        <Box sx={{ mb: 4 }}>
+                            <Typography variant="h4" gutterBottom align="center">
+                                Invoice Data Analysis
+                            </Typography>
+                            <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
+                                Analyze your invoice data for GETS compliance and readiness
+                            </Typography>
 
-                                <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
-                                    {steps.map((step) => (
-                                        <Step key={step.label}>
-                                            <StepLabel
-                                                icon={step.icon}
-                                                optional={
-                                                    <Typography variant="caption">{step.description}</Typography>
-                                                }
-                                            >
-                                                {step.label}
-                                            </StepLabel>
-                                        </Step>
-                                    ))}
-                                </Stepper>
-                            </Box>
+                            <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+                                {steps.map((step) => (
+                                    <Step key={step.label}>
+                                        <StepLabel
+                                            icon={step.icon}
+                                            optional={
+                                                <Typography variant="caption">{step.description}</Typography>
+                                            }
+                                        >
+                                            {step.label}
+                                        </StepLabel>
+                                    </Step>
+                                ))}
+                            </Stepper>
+                        </Box>
 
-                            {getStepContent(activeStep)}
-                        </Paper>
+                        {getStepContent(activeStep)}
+                    </Paper>
 
-                        {activeStep === 0 && <RecentReports />}
-                    </ErrorBoundary>
-                </Container>
-            </Box>
+                    {activeStep === 0 && <RecentReports />}
+                </ErrorBoundary>
+            </Container>
+        </Box>
     );
 };
 

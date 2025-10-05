@@ -101,7 +101,7 @@ class DataStore {
 
       if (result.rows.length > 0) {
         const reportData = result.rows[0].report_json;
-        
+
         // Handle case where data might be stored as "[object Object]"
         if (typeof reportData === 'string' && reportData === '[object Object]') {
           console.warn('Invalid JSON data found in database for report:', reportId);
@@ -112,12 +112,12 @@ class DataStore {
           }
           return null;
         }
-        
+
         // If it's already an object, return it directly
         if (typeof reportData === 'object' && reportData !== null) {
           return reportData;
         }
-        
+
         // Otherwise, parse the JSON string
         return JSON.parse(reportData);
       }
