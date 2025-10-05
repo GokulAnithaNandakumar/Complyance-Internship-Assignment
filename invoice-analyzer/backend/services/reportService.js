@@ -81,6 +81,24 @@ class ReportService {
           suggestion: r.suggestion
         }))
       },
+      ruleFindings: rulesValidation.results.map(r => ({
+        rule: r.ruleId,
+        ok: r.passed,
+        ...(r.exampleLine && { exampleLine: r.exampleLine }),
+        ...(r.details?.expected && { expected: r.details.expected }),
+        ...(r.details?.got && { got: r.details.got }),
+        ...(r.details?.value && { value: r.details.value })
+      })),
+      gaps: fieldMapping.missing.filter(m => m.required).map(m => `Missing required field: ${m.getsField}`),
+      meta: {
+        version: "1.0",
+        generated_at: new Date().toISOString(),
+        expires_at: this.calculateExpiryDate(),
+        db: "postgres",
+        rows_analyzed: processedData.processedRows,
+        total_rows: processedData.totalRows,
+        truncated: processedData.truncated
+      },
       questionnaire: {
         responses: questionnaire,
         score: scores.posture

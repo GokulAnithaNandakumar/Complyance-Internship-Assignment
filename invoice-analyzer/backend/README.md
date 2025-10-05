@@ -156,21 +156,12 @@ System health check
 
 ## 📊 Report Schema
 
-The complete report structure includes:
+The complete report structure follows the exact PRD requirements and includes:
 
 ```json
 {
   "reportId": "r_123",
   "uploadId": "u_456",
-  "meta": {
-    "version": "1.0",
-    "generated_at": "2025-01-15T10:30:00Z",
-    "expires_at": "2025-01-22T10:30:00Z",
-    "db": "postgres",
-    "rows_analyzed": 2,
-    "total_rows": 2,
-    "truncated": false
-  },
   "scores": {
     "overall": 85,
     "breakdown": {
@@ -198,9 +189,50 @@ The complete report structure includes:
       "close": 2,
       "missing": 2
     },
-    "matches": [...],
-    "close": [...],
-    "missing": [...]
+    "matches": [
+      {
+        "gets_field": "buyer.trn",
+        "source_field": "buyer_tax_id",
+        "confidence": 100,
+        "required": true
+      }
+    ],
+    "close": [
+      {
+        "gets_field": "seller.trn",
+        "source_field": "seller_tax_id",
+        "confidence": 86,
+        "required": true,
+        "suggestion": "Consider mapping seller_tax_id to seller.trn"
+      }
+    ],
+    "missing": [
+      {
+        "gets_field": "invoice.currency",
+        "required": true,
+        "type": "string"
+      }
+    ]
+  },
+  "ruleFindings": [
+    { "rule": "TOTALS_BALANCE", "ok": true },
+    { "rule": "LINE_MATH", "ok": false, "exampleLine": 2, "expected": 120, "got": 118 },
+    { "rule": "DATE_ISO", "ok": true },
+    { "rule": "CURRENCY_ALLOWED", "ok": true },
+    { "rule": "TRN_PRESENT", "ok": false, "value": "missing" }
+  ],
+  "gaps": [
+    "Missing required field: invoice.currency",
+    "Missing required field: buyer.name"
+  ],
+  "meta": {
+    "version": "1.0",
+    "generated_at": "2025-01-15T10:30:00Z",
+    "expires_at": "2025-01-22T10:30:00Z",
+    "db": "postgres",
+    "rows_analyzed": 2,
+    "total_rows": 2,
+    "truncated": false
   },
   "rules": {
     "summary": {
@@ -209,15 +241,50 @@ The complete report structure includes:
       "failed": 1,
       "score": 80
     },
-    "results": [...]
+    "results": [
+      {
+        "rule_id": "TOTALS_BALANCE",
+        "name": "Invoice Totals Balance",
+        "passed": true,
+        "description": "Line items sum must equal invoice total",
+        "details": "All totals match correctly",
+        "suggestion": null
+      }
+    ]
   },
   "questionnaire": {
-    "responses": {...},
+    "responses": {
+      "webhooks": true,
+      "sandbox_env": true,
+      "retries": false
+    },
     "score": 65
   },
-  "recommendations": [...]
+  "recommendations": [
+    {
+      "category": "Required Fields",
+      "priority": "High",
+      "title": "Add Missing Required Fields",
+      "description": "2 required field(s) are missing",
+      "action": "Ensure all required fields are present in your data."
+    }
+  ],
+  "aiInsights": {
+    "overallAssessment": "Your invoice data shows good compliance with GETS requirements...",
+    "priorityIssues": [...],
+    "fieldMappingSuggestions": [...],
+    "nextSteps": [...]
+  }
 }
 ```
+
+**Key PRD-Required Fields:**
+- ✅ `reportId`: Unique report identifier
+- ✅ `scores`: Complete scoring breakdown with weights
+- ✅ `coverage`: Field mapping analysis (matches/close/missing)
+- ✅ `ruleFindings`: Simplified rule validation results
+- ✅ `gaps`: List of critical missing fields
+- ✅ `meta`: Report metadata with persistence info
 
 ## 🔍 Validation Rules
 

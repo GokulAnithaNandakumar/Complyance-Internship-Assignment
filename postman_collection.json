@@ -1,82 +1,284 @@
 {
   "info": {
-    "name": "Readiness Analyzer (Assignment)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "name": "E-Invoicing Readiness Analyzer - PRD API Contract",
+    "description": "Complete API test collection for the PRD requirements. Tests the required 3 endpoints plus P1 features.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
   },
   "item": [
     {
-      "name": "Upload (clean)",
-      "request": {
-        "method": "POST",
-        "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "file",
-              "type": "file",
-              "src": [
-                "sample_clean.json"
+      "name": "Required P0 Endpoints",
+      "item": [
+        {
+          "name": "1. POST /upload - Upload CSV/JSON File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "sample_clean.json",
+                  "description": "Upload the provided sample file"
+                },
+                {
+                  "key": "country",
+                  "value": "UAE",
+                  "type": "text",
+                  "description": "Optional country context"
+                },
+                {
+                  "key": "erp",
+                  "value": "SAP",
+                  "type": "text",
+                  "description": "Optional ERP system"
+                }
               ]
-            }
-          ]
-        },
-        "url": {
-          "raw": "{{baseUrl}}/upload",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "upload"
-          ]
-        }
-      }
-    },
-    {
-      "name": "Analyze",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "upload"
+              ]
+            },
+            "description": "PRD Required: POST /upload endpoint. Should return uploadId."
           }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"uploadId\": \"u_abc\", \"questionnaire\": {\"webhooks\": true, \"sandbox_env\": true, \"retries\": false}}"
         },
-        "url": {
-          "raw": "{{baseUrl}}/analyze",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "analyze"
-          ]
+        {
+          "name": "2. POST /analyze - Analyze with Questionnaire",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uploadId\": \"{{uploadId}}\",\n  \"questionnaire\": {\n    \"webhooks\": true,\n    \"sandbox_env\": true,\n    \"retries\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analyze",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "analyze"
+              ]
+            },
+            "description": "PRD Required: POST /analyze endpoint. Should return complete report JSON with reportId."
+          }
+        },
+        {
+          "name": "3. GET /report/:reportId - Retrieve Saved Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/report/{{reportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "report",
+                "{{reportId}}"
+              ]
+            },
+            "description": "PRD Required: GET /report/:reportId endpoint. Must return from datastore."
+          }
         }
+      ],
+      "description": "The 3 endpoints required by the PRD API contract"
+    },
+    {
+      "name": "P1 Features",
+      "item": [
+        {
+          "name": "GET /reports - Recent Reports List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reports?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of reports"
+                }
+              ]
+            },
+            "description": "P1 Feature: Recent reports for UI list"
+          }
+        },
+        {
+          "name": "GET /share/:reportId - Share Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/share/{{reportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "share",
+                "{{reportId}}"
+              ]
+            },
+            "description": "P1 Feature: Public shareable HTML page"
+          }
+        },
+        {
+          "name": "GET /share/:reportId/pdf - PDF Export",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/share/{{reportId}}/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "share",
+                "{{reportId}}",
+                "pdf"
+              ]
+            },
+            "description": "P1 Feature: PDF report download"
+          }
+        }
+      ]
+    },
+    {
+      "name": "P2 Features",
+      "item": [
+        {
+          "name": "POST /share/:reportId/email - Email Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/share/{{reportId}}/email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "share",
+                "{{reportId}}",
+                "email"
+              ]
+            },
+            "description": "P2 Feature: Email report link"
+          }
+        },
+        {
+          "name": "GET /health - System Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "P2 Feature: Health check with DB status"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-generate test IDs if not set",
+          "if (!pm.globals.get('uploadId')) {",
+          "    pm.globals.set('uploadId', 'u_sample123');",
+          "}",
+          "if (!pm.globals.get('reportId')) {",
+          "    pm.globals.set('reportId', 'r_9912b013ceb4');",
+          "}"
+        ]
       }
     },
     {
-      "name": "Get Report",
-      "request": {
-        "method": "GET",
-        "url": {
-          "raw": "{{baseUrl}}/report/r_abc",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "report",
-            "r_abc"
-          ]
-        }
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Extract IDs from successful responses",
+          "if (pm.response.code === 200) {",
+          "    try {",
+          "        const jsonData = pm.response.json();",
+          "        if (jsonData.uploadId) {",
+          "            pm.globals.set('uploadId', jsonData.uploadId);",
+          "            console.log('Extracted uploadId:', jsonData.uploadId);",
+          "        }",
+          "        if (jsonData.reportId) {",
+          "            pm.globals.set('reportId', jsonData.reportId);",
+          "            console.log('Extracted reportId:', jsonData.reportId);",
+          "        }",
+          "    } catch (e) {",
+          "        console.log('Response is not JSON');",
+          "    }",
+          "}"
+        ]
       }
     }
   ],
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://<your-app>"
+      "value": "https://complyance-internship-assignment-backend.onrender.com",
+      "description": "Production API URL"
+    },
+    {
+      "key": "uploadId",
+      "value": "u_sample123",
+      "description": "Will be auto-populated from upload response"
+    },
+    {
+      "key": "reportId",
+      "value": "r_sample123",
+      "description": "Will be auto-populated from analyze response"
     }
   ]
 }
